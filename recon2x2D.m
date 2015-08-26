@@ -1,103 +1,101 @@
-function [valuex, gradx, g, value, grad, ind, ttr] = recon2x2D(tau, g1, ...
-  data1, g2, data2, x, t, ttr_flag)
-% function [valuex, gradx, g, value, grad] = recon2x2D(tau, g1, data1, g2,
-%                                                                 data2, x)
+function [TD_out_x, TD_out, TTR_out] = recon2x2D(tau, grids, datas, x, t)
+% function [TD_out_x, TD_out, TTR_out] = recon2x2D(tau, grids, datas, x, t)
 %
-% Inputs:  tau           - time stamps for data1, data2
-%          g1, g2        - grids for corresponding to data1, data2
-%          data1, data2  - 2D value functions
-%          x             - location to evaluate 4D value function
-%                          could also be a grid structure, in which case
-%                          the 4D value function will be evaluated on this
-%                          grid
-%          t             - time to evaluate 4D value function (defaults to
-%                          minimum time at which V(t,x) <= 0
-%          ttr_flag      - set to true to store time-to-reach value 
-%                          function
+% Inputs:  tau   - time stamps for datas
+%          grids - grids{i} is the grid corresponding to datas{i}
+%          datas - 2D value functions
+%          x     - If a vector, it's the state at which 4D value function
+%                  is reconstructed.
+%                  If two vectors, it specifies the bounds on the 4D grid
+%                  within which the 4D value function is reconstructed
+%          t     - time to evaluate 4D value function 
+%                  (defaults to minimum time at which V(t,x) <= 0)
 %
-% Outputs: valuex, gradx - value and gradient at state x
-%          g             - 4D grid structure
-%          value, grad   - values and gradients around state x
-%          ind           - index of tau that at which the reachable set is
-%                          being evaluated
-%          ttf           - time-to-reach function up to tau(ind)
+% Outputs: TD_out_x - value and gradient at state x
+%          TD_out   - grid, value, and gradient around state x or within
+%                     the bounds specified by x
+%          TTR_out  - grid, value, and graident for the time to reach
+%                     function around the state x or within the bounds
+%                     specified by x
+%
+% Created by Mo Chen
+% Modified, Kene Akametalu
+% Modified, Mo Chen, 2015-08-25
 
-% Make sure input state is a column
-if size(x,2) > size(x,1), x = x'; end
-
-% Evaluate value function at the maximum available time by default
-if nargin<7, t = tau(end); end
-
-if nargin<8
-  ttr_flag = 0;
+% Check input grid and data format
+if length(grids) ~= 2 || length(datas) ~= 2
+  error('grids and datas must be cell structures of length 2!')
 end
-% Find the first time in the vector tau that is after the specified time t 
-ind = min(length(tau), find(tau<=t,1,'last')+1);
+
+% Find smallest time in time vector that is bigger than the specified time.
+% By default, this is just the largest time from the time vector because we
+% want to go through the entire set of times
+if nargin<5
+  t = tau(end);
+end
+ind = min(length(tau), find(tau<=t, 1, 'last') + 1);
 tau = tau(1:ind);
 
-if size(x,2) > 1
-  % If a range of states are specified, then read off the range
-  xmin = x(:, 1);
-  xmax = x(:, 2);
+% Make sure the input state is always a column vector or two
+if size(x,2) > size(x,1)
+  x = x';
+end
+
+% Reconstruction is done inside grid bounds specified by xmin and xmax
+if size(x,2) == 1
+  widthx = 1.6*grids{1}.dx;
+  widthy = 1.6*grids{2}.dx;
+  xmin = [x(1:grids{1}.dim) - widthx; x(grids{1}.dim+1:end) - widthy];
+  xmax = [x(1:grids{1}.dim) + widthx; x(grids{1}.dim+1:end) + widthy];
+elseif size(x,2) == 2
+  xmin = x(:,1);
+  xmax = x(:,2);
 else
-  % Otherwise, use default range
-  widthx = 1.6*g1.dx;
-  widthy = 1.6*g2.dx;
-  xmin = [x(1:g1.dim) - widthx; x(g1.dim+1:end) - widthy];
-  xmax = [x(1:g1.dim) + widthx; x(g1.dim+1:end) + widthy];
+  error('Input state x must be a column vector or two!')
 end
 
-% Create a new grid by truncating the original grid that is outside of the
-% specified state range
-[gs2D1, data1s1] = ...
-  truncateGrid(g1, data1(:,:,1), xmin(1:g1.dim),     xmax(1:g1.dim)    );
+% Truncate grids and check to see if the state x is outside of either grid
+gs2D = cell(size(grids));
+datas1 = cell(size(datas));
+for i = 1:length(grids)
+  % Truncate grid according to specified limits
+  [gs2D{i}, datas1{i}] = truncateGrid(grids{i}, datas{i}(:,:,1), ...
+                               xmin(2*i-1:2*i), xmax(2*i-1:2*i));
 
-% A safety check that prevents errors: If the truncated grid is less than 3
-% grid points thick, then no computation can be done.
-if any(gs2D1.N<3)
-  valuex = max(data1(:));
-  gradx = zeros(4,1);
-  g = [];
-  value = [];
-  grad = [];
-  return
+  % If x is too close to the edge of the grid, the value is assumed to be
+  % the maximum value over the entire grid.
+  if any(gs2D{i}.N<3)
+    TD_out_x.value = max(datas{i}(:));
+    TD_out_x.grad = [];
+    TD_out = [];
+    TTR_out = [];
+    return
+  end
 end
 
-% Create a new grid from the second input grid in the same way
-[gs2D2, data2s1] = ...
-  truncateGrid(g2, data2(:,:,1), xmin(g1.dim+1:end), xmax(g1.dim+1:end));
+% Initialize value function within small grid bounds
+data1s = zeros([gs2D{1}.N' length(tau)]);
+data2s = zeros([gs2D{2}.N' length(tau)]);
+data1s(:,:,1) = datas1{1};
+data2s(:,:,1) = datas1{2};
 
-if any(gs2D2.N<3)
-  valuex = max(data2(:));
-  gradx = zeros(4,1);
-  g = [];
-  value = [];
-  grad = [];
-  return
-end
-
-% Create 4D grid from parameters in the two truncated 2D grids
+% Construct 4D grid based on parameters of the 2D grids and specified grid
+% bounds
 gs4D.dim = 4;
-xs1 = gs2D1.xs;
-xs2 = gs2D2.xs;
+xs1 = gs2D{1}.xs;
+xs2 = gs2D{2}.xs;
 gs4D.min = [xs1{1}(1,1); xs1{2}(1,1); xs2{1}(1,1); xs2{2}(1,1)];
 gs4D.max = [xs1{1}(end,1); xs1{2}(1,end); xs2{1}(end,1); xs2{2}(1,end)];
 gs4D.bdry = @addGhostExtrapolate;
-gs4D.N = [gs2D1.N; gs2D2.N];
+gs4D.N = [gs2D{1}.N; gs2D{2}.N];
 gs4D = processGrid(gs4D);
 
-% Create initial (first time step) 4D value function arrays
-data1s = zeros([gs2D1.N' length(tau)]);
-data2s = zeros([gs2D2.N' length(tau)]);
-data1s(:,:,1) = data1s1;
-data2s(:,:,1) = data2s1;
-
-% Copy large 2D look-up table into our small grid for all time steps
-for i = 2:length(tau)
-  [~, data1s(:,:,i)] = ...
-    truncateGrid(g1, data1(:,:,i), xmin(1:g1.dim),     xmax(1:g1.dim)    );
-  [~, data2s(:,:,i)] = ...
-    truncateGrid(g2, data2(:,:,i), xmin(g1.dim+1:end), xmax(g1.dim+1:end));
+% Copy large 2D look-up table into our small grid
+for i = 1:length(tau)
+  [~, data1s(:,:,i)] = truncateGrid(grids{1}, datas{1}(:,:,i), ...
+                               xmin(1:2), xmax(1:2));
+  [~, data2s(:,:,i)] = truncateGrid(grids{2}, datas{2}(:,:,i), ...
+                       xmin(3:4), xmax(3:4));
 end
 
 % Extend x slice across y
@@ -111,12 +109,14 @@ data2_4D = repmat(data2_4D(1,1,:,:), gs4D.N(1), gs4D.N(2), 1, 1);
 % Create initial conditions
 data4Ds = max(data1_4D, data2_4D);
 
-% Create time to reach function if specified
-if ttr_flag
-  [ ~, schemeData] = postTimestepTTR(tau(1), data4Ds(:), []);
+% Initialize time-to-reach value function
+if nargout>2
+  TTR_out.value = 1e5 * ones(size(data4Ds));
+  TTR_out.value(data4Ds<=0) = 0;
 end
 
 for i = 2:length(tau)
+  % Save value function at the last time step
   data4Ds_last = data4Ds;
   
   % Extend 2D value functions across the other two dimensions
@@ -127,48 +127,46 @@ for i = 2:length(tau)
   
   % Freeze the value function
   data4Ds = max(data1_4D, data2_4D);
-  data4Ds = min(data4Ds,data4Ds_last);
+  data4Ds = min(data4Ds, data4Ds_last);
   
-  % Compute time-to-reach function if needed
-  if ttr_flag
-    [ ~, schemeData] = postTimestepTTR(tau(i), data4Ds(:), schemeData);
+  % If a single state vector is specified, then stop reconstruction
+  % whenever the value becomes negative
+  if nargin<5 && size(x,2) == 1
+    if eval_u(gs4D, data4Ds, x') <= 0
+      break;
+    end
   end
   
-  if nargin<7 && size(x,2) == 1
-    if eval_u(gs4D, data4Ds, x') <= 0, break; end
+  % Update time-to-reach value function
+  if nargout>2
+    TTR_out.value((data4Ds<0) & (data4Ds_last>0)) = tau(i);
   end
 end
-% disp(['Final time is ' num2str(tau(i))])
 
-%% Package outputs
-% Value at current state
-if size(x,2)>1
-  % Empty if a range of states is specified
-  valuex = [];
+% If input state is a single vector, return the value function at that
+% vector
+if size(x,2)==1
+  TD_out_x.value = eval_u(gs4D, data4Ds, x');
 else
-  % Interpolate in the small grid if a single state is specified
-  valuex = eval_u(gs4D, data4Ds, x');
+  TD_out_x.value = [];
 end
 
-% value and gradient at the range of states in the computation
-value = data4Ds;
-g = gs4D;
-grad = extractCostates(g, value);
+% Output values on grid that's within the specified bounds
+TD_out.value = data4Ds;
+TD_out.g = gs4D;
+TD_out.grad = extractCostates(gs4D, data4Ds);
 
-% Gradient at current state
-if size(x,2)>1
-  % Empty if a range of states is specified
-  gradx = [];
+% If input state is a single vector, return the gradient at that vector
+if size(x,2)==1
+  TD_out_x.grad = calculateCostate(gs4D, TD_out.grad, x');
 else
-  % Interpolate in the small grid if a single state is specified
-  gradx = calculateCostate(g, grad, x');
+  TD_out_x.grad = [];
 end
 
-% Reshape time-to-reach function if needed
-if ttr_flag
-  ttr = reshape(schemeData.ttr, g.shape);
-else
-  ttr =[];
+% Output time-to-reach value gradients
+if nargout>2
+  TTR_out.g = gs4D;
+  TTR_out.grad = extractCostates(gs4D, TTR_out.value);
 end
 
 end
