@@ -10,16 +10,13 @@ xmin = [gx.min; gy.min] - 1;
 xmax = [gx.max; gy.max] + 1;
 x = [xmin xmax];
 
-% Compute time to reach function
-ttr_flag = 1;
-
 % Evalulation time (as big as possible)
 t = inf;
 
 % Reconstruct
 tic
-[valuex, gradx, g, value, grad, ind, ttr] = recon2x2D(tau, gx, ...
-  datax, gy, datay, x, t, ttr_flag);
+[~, TD_out, TTR_out] = recon2x2D(tau, ...
+  {gx; gy}, {datax; datay}, x, t);
 disp(['Time for full reconstruction: ' num2str(toc)])
 
 % Visualize the results by taking slices at various relative velocities
@@ -38,14 +35,16 @@ for i = 1:num_plots
   % Plot time-dependent zero level sets
   figure(f1)
   subplot(spR, spC, i)
-  [g2D, data2D] = proj2D(g, [0 1 0 1], g.N([1 3]), value, v_slices(:,i));
+  [g2D, data2D] = proj2D(TD_out.g, [0 1 0 1], TD_out.g.N([1 3]), ...
+    TD_out.value, v_slices(:,i));
   contour(g2D.xs{1}, g2D.xs{2}, data2D, [0 0]); hold on
   title(['v_r=[' num2str(v_slices(1,i)) ' ' num2str(v_slices(2,i)) ']'])
   
   % Plot time-to-reach functions
   figure(f2)
   subplot(spR, spC, i)
-  [g2D, data2D] = proj2D(g, [0 1 0 1], g.N([1 3]), ttr, v_slices(:,i));
+  [g2D, data2D] = proj2D(TTR_out.g, [0 1 0 1], TTR_out.g.N([1 3]), ...
+    TTR_out.value, v_slices(:,i));
   contour(g2D.xs{1}, g2D.xs{2}, data2D);
   title(['v_r=[' num2str(v_slices(1,i)) ' ' num2str(v_slices(2,i)) ']'])
 end
@@ -53,6 +52,6 @@ end
 % Test reconstruction time for a single state (should be safe)
 x = [2 0 2 0];
 tic
-[valuex, gradx] = recon2x2D(tau, gx, datax, gy, datay, x, t);
+TD_out_x = recon2x2D(tau, {gx; gy}, {datax; datay}, x, t);
 disp(['Time for state reconstruction: ' num2str(toc)])
-disp(['valuex=' num2str(valuex)])
+disp(['valuex=' num2str(TD_out_x.value)])

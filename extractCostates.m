@@ -3,7 +3,6 @@ function p = extractCostates(grid, data, derivFunc, upWind)
 % Estimates the costate p at position x for cost function data on grid g by
 % numerically taking partial derivatives along each grid direction.
 % Numerical derivatives are taken using the levelset toolbox
-% HACK ALERT: for now we assume 4-D system to save coding time
 
 if nargin<3
     derivFunc = @upwindFirstWENO5;
