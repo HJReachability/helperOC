@@ -1,3 +1,7 @@
+clear all;
+close all;
+addpath('..')
+
 load('air3D')
 data2D = air3D2csv(g, data, 'air3D.csv', 0);
 data2Dh = air3D2csv(g, data, 'air3Dh.csv', 1);

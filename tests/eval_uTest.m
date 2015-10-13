@@ -4,7 +4,9 @@
 % functions, and compares the evaluations with analytic values
 %
 % Errors should be very small
-clear
+clear all;
+close all;
+addpath('..')
 
 load('spheres2346D')
 
@@ -31,4 +33,4 @@ for i = 1:length(dims)
   disp([num2str(dims(i)) 'D error = ' num2str(error)])
 end
 
-clear
+clear all

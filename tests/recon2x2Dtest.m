@@ -1,5 +1,6 @@
 clear all;
 close all;
+addpath('..')
 
 % Test the recon2x2D function using a 2D quadrotor collision example
 load('quad2Dcollision.mat')

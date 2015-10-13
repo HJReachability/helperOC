@@ -5,7 +5,8 @@
 %
 % Output should be concentric circles in a total of 3 different colors
 close all;
-clear
+clear all;
+addpath('..');
 
 load('spheres2346D')
 
@@ -36,4 +37,4 @@ for i = 1:length(dims)
   end
 end
 
-clear
+clear all

@@ -1,5 +1,6 @@
 close all;
 clear all;
+addpath('..')
 
 %%%%% FIRST TEST: 3D Rectangular box %%%%%
 % Create the first grid.
