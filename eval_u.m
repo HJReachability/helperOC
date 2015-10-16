@@ -10,20 +10,23 @@ function v = eval_u(g, data, x)
 % OUTPUT
 %   v:  value at points x
 %
-% Mo Chen, 2014-09-16
+% NOTE: For 3D arrays, this code automatically checks whether the 3rd
+% dimension is periodic by checking whether g.bdry{3} is @addGhostPeriodic
 %
+% Mo Chen, 2015-10-15
 
 switch g.dim
   case 1
     v = interpn(g.vs{1}, data, x);
   case 2
     v = interpn(g.vs{1}, g.vs{2}, data, x(:,1),x(:,2));
-%   % USE THIS FOR PERIODIC DIMENSIONS
-%   case 3
-%     v = interpn(g.vs{1}, g.vs{2}, [g.vs{3}; 2*pi], cat(3,u,u(:,:,1)), ...
-%       x(:,1),x(:,2),x(:,3));
   case 3
-    v = interpn(g.vs{1}, g.vs{2}, g.vs{3}, data,  x(:,1),x(:,2),x(:,3));
+    if isequal(g.bdry{3}, @addGhostPeriodic)
+      v = interpn(g.vs{1}, g.vs{2}, [g.vs{3}; 2*pi], cat(3, data, ... 
+        data(:,:,1)), x(:,1),x(:,2),x(:,3));
+    else
+      v = interpn(g.vs{1}, g.vs{2}, g.vs{3}, data, x(:,1),x(:,2),x(:,3));
+    end
   case 4
     v = interpn(g.vs{1},g.vs{2},g.vs{3}, g.vs{4}, data, ...
       x(:,1),x(:,2),x(:,3),x(:,4));
