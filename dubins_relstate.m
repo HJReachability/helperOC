@@ -1,4 +1,4 @@
-function xr = air3Drelpos(xe, xp)
+function xr = dubins_relstate(xe, xp)
 % xr = air3Drelpos(xe, xp)
 xr = xp' - xe';
 
