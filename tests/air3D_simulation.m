@@ -4,8 +4,13 @@ addpath('..')
 load('air3D_simulation.mat')
 
 % Time integration parameters
+<<<<<<< HEAD
 dt = 1;
 tMax = 8;
+=======
+dt = 0.1;
+tMax = 10;
+>>>>>>> 1928d2ffdab54a7b581cd0fff2afdd65f671035a
 t = 0:dt:tMax;
 
 % Initial states
