@@ -15,6 +15,9 @@ function v = eval_u(g, data, x)
 %
 % Mo Chen, 2015-10-15
 
+% Input checking
+x = checkInterpInput(g, x);
+
 switch g.dim
   case 1
     v = interpn(g.vs{1}, data, x);

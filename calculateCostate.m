@@ -15,6 +15,9 @@ function p = calculateCostate(g, P, x)
 % Mo Chen, 2015-10-15
 % Originally adapted from Haomiao Huang's code
 
+% Check input
+x = checkInterpInput(g, x);
+
 p = zeros(size(x,1), g.dim);
 
 switch g.dim
