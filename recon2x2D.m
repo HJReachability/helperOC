@@ -14,7 +14,7 @@ function [TD_out_x, TD_out, TTR_out] = recon2x2D(tau, grids, datas, x, t)
 % Outputs: TD_out_x - value and gradient at state x
 %          TD_out   - grid, value, and gradient around state x or within
 %                     the bounds specified by x
-%          TTR_out  - grid, value, and graident for the time to reach
+%          TTR_out  - grid, value, and gradient for the time to reach
 %                     function around the state x or within the bounds
 %                     specified by x
 %
