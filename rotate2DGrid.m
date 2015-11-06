@@ -26,4 +26,5 @@ end
 gRot.xs = g2D.xs;
 gRot.xs{1} = cos(theta)*g2D.xs{1} - sin(theta)*g2D.xs{2};
 gRot.xs{2} = sin(theta)*g2D.xs{1} + cos(theta)*g2D.xs{2};
+gRot.dim = 2;
 end

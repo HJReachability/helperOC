@@ -13,15 +13,16 @@ hold on
 % Rotate the plot by N different random angles
 N = 5;
 thetas = 2*pi*rand(N,1);
+shifts = -30 + 60*rand(N, 2);
 colors = lines(N);
 hs = [];
 for i = 1:N
   gRot = rotate2DGrid(g2D, thetas(i));
-
-  [~, h] = contour(gRot.xs{1}, gRot.xs{2}, data2D, [0 0], ...
+  gFinal = shift2DGrid(gRot, shifts(i,:));
+  [~, h] = contour(gFinal.xs{1}, gFinal.xs{2}, data2D, [0 0], ...
     'color', colors(i,:));
   hs = [hs h];
 end
 axis equal
-legend(hs, cellstr(num2str(thetas*180/pi)))
+legend(hs, cellstr(num2str([thetas*180/pi, shifts])), 'fontsize', 14)
 end

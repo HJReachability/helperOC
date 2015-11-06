@@ -1,4 +1,4 @@
-function rotate2D_test
+function rotate2D_test()
 addpath('..')
 
 %% Create a random vector (50% chance to be column)
