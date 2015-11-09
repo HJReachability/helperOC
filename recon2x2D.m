@@ -139,7 +139,7 @@ for i = 2:length(tau)
   
   % Update time-to-reach value function
   if nargout>2
-    TTR_out.value((data4Ds<0) & (data4Ds_last>0)) = tau(i);
+    TTR_out.value(data4Ds<0) = min(TTR_out.value(data4Ds<0), tau(i));
   end
 end
 
