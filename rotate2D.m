@@ -10,14 +10,14 @@ function vOut = rotate2D(vIn, theta)
 % Mo Chen, 2015-10-26
 
 % Check if input is 2D
-if numel(vIn) ~= 2
+if all(size(vIn) ~= 2)
   error('Input vector must be 2D!')
 end
 
 rotate_matrix = [cos(theta) -sin(theta); sin(theta) cos(theta)];
 
 % Rotate matrix and preserve vector size
-if iscolumn(vIn)
+if size(vIn, 1) == 2
   vOut = rotate_matrix * vIn;
 else
   vOut = (rotate_matrix * vIn')';

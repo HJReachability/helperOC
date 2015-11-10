@@ -1,4 +1,4 @@
-function gRot = rotate2DGrid(g2D, theta)
+function gRot = rotateGrid(gIn, theta)
 % function gRot = rotate2DGrid(g2D, theta)
 %
 % Rotates the grid so that the contours from some function corresponding to
@@ -14,17 +14,17 @@ function gRot = rotate2DGrid(g2D, theta)
 % Mo Chen, 2015-10-30
 
 % Some basic input checks
-if ~isstruct(g2D)
+if ~isstruct(gIn)
   error('Input grid must be a struct!')
 end
 
-if g2D.dim ~= 2
-  error('Input grid must be 2D!')
+if gIn.dim ~= 2
+  warning('Input is not 2D; only rotating first 2 dimensions!')
 end
 
 % Rotate the grid using a 2D rotation matrix
-gRot.xs = g2D.xs;
-gRot.xs{1} = cos(theta)*g2D.xs{1} - sin(theta)*g2D.xs{2};
-gRot.xs{2} = sin(theta)*g2D.xs{1} + cos(theta)*g2D.xs{2};
-gRot.dim = 2;
+gRot.xs = gIn.xs;
+gRot.xs{1} = cos(theta)*gIn.xs{1} - sin(theta)*gIn.xs{2};
+gRot.xs{2} = sin(theta)*gIn.xs{1} + cos(theta)*gIn.xs{2};
+gRot.dim = gIn.dim;
 end
