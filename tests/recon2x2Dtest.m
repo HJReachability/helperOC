@@ -36,16 +36,15 @@ for i = 1:num_plots
   % Plot time-dependent zero level sets
   figure(f1)
   subplot(spR, spC, i)
-  [g2D, data2D] = proj2D(TD_out.g, [0 1 0 1], TD_out.g.N([1 3]), ...
-    TD_out.value, v_slices(:,i));
+  [g2D, data2D] = proj2D(TD_out.g, TD_out.value, [0 1 0 1], v_slices(:,i));
   contour(g2D.xs{1}, g2D.xs{2}, data2D, [0 0]); hold on
   title(['v_r=[' num2str(v_slices(1,i)) ' ' num2str(v_slices(2,i)) ']'])
   
   % Plot time-to-reach functions
   figure(f2)
   subplot(spR, spC, i)
-  [g2D, data2D] = proj2D(TTR_out.g, [0 1 0 1], TTR_out.g.N([1 3]), ...
-    TTR_out.value, v_slices(:,i));
+  [g2D, data2D] = ...
+    proj2D(TTR_out.g, TTR_out.value, [0 1 0 1], v_slices(:,i));
   contour(g2D.xs{1}, g2D.xs{2}, data2D);
   title(['v_r=[' num2str(v_slices(1,i)) ' ' num2str(v_slices(2,i)) ']'])
 end
