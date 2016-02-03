@@ -112,26 +112,37 @@ switch g.dim
     data2D = interpn(x1_g2D, x2_g2D, data2D, g2D.xs{1}, g2D.xs{2});
     
   case 3
-    if dims(1)          % dims = [1 0 0]
-      temp = interpn(g.vs{1}, g.vs{2}, g.vs{3}, ...
-        data, xs, g.vs{2}, g.vs{3});
-      x1_g2D = g.vs{2};
-      x2_g2D = g.vs{3};
-    elseif dims(2)      % dims = [0 1 0]
-      temp = interpn(g.vs{1}, g.vs{2}, g.vs{3}, ...
-        data, g.vs{1}, xs, g.vs{3});
-      x1_g2D = g.vs{1};
-      x2_g2D = g.vs{3};
-    else                % dims = [0 0 1]
-      temp = interpn(g.vs{1}, g.vs{2}, g.vs{3}, ...
-        data, g.vs{1}, g.vs{2}, xs);
-      x1_g2D = g.vs{1};
-      x2_g2D = g.vs{2};
+    if ischar(xs)
+      % If xs is a max
+      if strcmp(xs,'min')
+        data2D = squeeze(min(data, [], find(dims)));
+      elseif strcmp(xs,'max')
+        data2D = squeeze(max(data, [], find(dims)));
+      else
+        error('xs must be a vector, ''min'', or ''max''!')
+      end
+      
+    else
+      if dims(1)          % dims = [1 0 0]
+        temp = interpn(g.vs{1}, g.vs{2}, g.vs{3}, ...
+          data, xs, g.vs{2}, g.vs{3});
+        x1_g2D = g.vs{2};
+        x2_g2D = g.vs{3};
+      elseif dims(2)      % dims = [0 1 0]
+        temp = interpn(g.vs{1}, g.vs{2}, g.vs{3}, ...
+          data, g.vs{1}, xs, g.vs{3});
+        x1_g2D = g.vs{1};
+        x2_g2D = g.vs{3};
+      else                % dims = [0 0 1]
+        temp = interpn(g.vs{1}, g.vs{2}, g.vs{3}, ...
+          data, g.vs{1}, g.vs{2}, xs);
+        x1_g2D = g.vs{1};
+        x2_g2D = g.vs{2};
+      end
+      
+      data2D = squeeze(temp);
+      data2D = interpn(x1_g2D, x2_g2D, data2D, g2D.xs{1}, g2D.xs{2});
     end
-    
-    data2D = squeeze(temp);
-    data2D = interpn(x1_g2D, x2_g2D, data2D, g2D.xs{1}, g2D.xs{2});
-    
   otherwise
     error('Input data must be in 3D, 4D, or 6D!')
 end

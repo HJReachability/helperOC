@@ -23,7 +23,7 @@ function [g3D, data3D] = proj3D(g4D, data4D, dims, xs, N3D)
 
 % If data is already 3D, there's nothing to do
 if g4D.dim == 3
-  warning('Grid structure or data is already 2D!')
+  warning('Grid structure or data is already 3D!')
   return;
 end
 
