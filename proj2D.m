@@ -18,6 +18,10 @@ function [g2D, data2D] = proj2D(g, data, dims, xs, N2D)
 % Mo Chen, Oct. 4, 2013
 % Modified by Mo Chen, 2015-11-11
 
+if nargin < 4
+  xs = 'min';
+end
+
 % If data is already 2D, there's nothing to do
 if g.dim == 2 || ismatrix(data) == 2
   warning('Grid structure or data is already 2D!')
