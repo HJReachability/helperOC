@@ -1,4 +1,4 @@
-function p = extractCostates(grid, data, derivFunc, upWind)
+function P = extractCostates(grid, data, derivFunc, upWind)
 % function p = extractCostates(grid, data, upWind)
 %
 % Estimates the costate p at position x for cost function data on grid g by
@@ -30,17 +30,17 @@ numInfty = 1e6;
 data(isnan(data)) = numInfty;
 
 % Go through each dimension and compute the gradient in each
-p = cell(grid.dim,1);
+P = cell(grid.dim,1);
 for i = 1:grid.dim
   [derivL, derivR] = derivFunc(grid, data, i);
   
   if upWind
-    p{i} = derivL.*(derivL>0 & derivR>0) + ...
+    P{i} = derivL.*(derivL>0 & derivR>0) + ...
       derivR.*(derivL<0 & derivR<0) + ...
       derivL.*(derivL>0 & derivR<0 & -derivL<=derivR) + ...
       derivR.*(derivL>0 & derivR<0 & -derivL>derivR);
   else
-    p{i} = (derivL + derivR)/2;
+    P{i} = (derivL + derivR)/2;
   end
 end
 
