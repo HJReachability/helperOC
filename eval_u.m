@@ -20,7 +20,7 @@ for i = 1:g.dim
     g.vs{i} = cat(1, g.vs{i}, g.vs{i}(end) + g.dx(i));
 
     % Input data
-    eval(periodicAugmentCmd(i, g.dim));
+    data = eval(periodicAugmentCmd(i, g.dim));
   end
 end
 
@@ -64,7 +64,7 @@ function cmd = periodicAugmentCmd(idim, dims)
 % Mo Chen, 2016-02-19
 
 
-cmd = ['data = cat(' num2str(idim) ', data, data('];
+cmd = ['cat(' num2str(idim) ', data, data('];
 
 for i = 1:dims
   if i == idim
