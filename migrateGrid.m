@@ -1,5 +1,5 @@
 function dataNew = migrateGrid(gOld, dataOld, gNew)
-% function dataNew = migrateGrid(gOld, dataOld, gNew)
+% dataNew = migrateGrid(gOld, dataOld, gNew)
 %    Transfers dataOld onto a from the grid gOld to the grid gNew
 %
 % Inputs: gOld, gNew - old and new grid structures
@@ -18,7 +18,11 @@ end
 
 % Set value of new data to the maximum of old data
 dataMax = max(dataOld(:));
-dataNew = dataMax * ones(gNew.N');
+if gOld.dim > 1
+  dataNew = dataMax * ones(gNew.N');
+else
+  dataNew = dataMax * ones(gNew.N, 1);
+end
 
 % Interpolate to obtain new data from old data in the range of axis values
 % that are within the bounds of the old grid
