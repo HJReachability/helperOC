@@ -26,7 +26,7 @@ h1.LineColor = 'r';
 
 %%%%% SECOND TEST: Air3D %%%%%
 load('air3D_gridMigration.mat')
-[g2, data2] = truncateGrid(g1, data1, [15 -2 2], [18 2 4]);
+[g2, data2] = truncateGrid(g1, data1, [10 -5 2], [18 2 4]);
 figure;
 h1 = visualizeLevelSet(g1, data1, 'surface', 0); hold on
 h1.FaceAlpha = 0.6;
