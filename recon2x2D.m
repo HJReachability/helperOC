@@ -22,37 +22,33 @@ function [TD_out_x, TD_out, TTR_out] = recon2x2D(tau, grids, datas, x, t)
 %
 % Created by Mo Chen
 % Modified, Kene Akametalu
-% Modified, Mo Chen, 2015-08-25
+% Modified, Mo Chen, 2016-03-08
 
+%% Input check and defaults
 % Check input grid and data format
 if length(grids) ~= 2 || length(datas) ~= 2
   error('grids and datas must be cell structures of length 2!')
 end
 
+% By default, do reconstruction over the entire space
+if nargin < 4
+  x = [grids{1}.min - 5 grids{1}.max + 5; grids{2}.min - 5 grids{2}.max + 5];;
+end
+
 % Find smallest time in time vector that is bigger than the specified time.
 % By default, this is just the largest time from the time vector because we
 % want to go through the entire set of times
-if nargin<5
+if nargin < 5
   t = tau(end);
 end
 ind = min(length(tau), find(tau<=t, 1, 'last') + 1);
 tau = tau(1:ind);
 
-
-% Range for full reconstruction
-if ischar(x)
-  if strcmp(x, 'full')
-    x = [grids{1}.min - 5 grids{1}.max + 5; grids{2}.min - 5 grids{2}.max + 5];
-  else
-    error('Unknown range!')
-  end
-end
-
+%% Reconstruction range
 % Make sure the input state is always a column vector or two
 if size(x,2) > size(x,1)
   x = x';
 end
-
 
 % Reconstruction is done inside grid bounds specified by xmin and xmax
 if size(x,2) == 1
@@ -60,15 +56,16 @@ if size(x,2) == 1
   widthy = 1.6*grids{2}.dx;
   xmin = [x(1:grids{1}.dim) - widthx; x(grids{1}.dim+1:end) - widthy];
   xmax = [x(1:grids{1}.dim) + widthx; x(grids{1}.dim+1:end) + widthy];
+  
 elseif size(x,2) == 2
   xmin = x(:,1);
   xmax = x(:,2);
 else
   error('Input state x must be a column vector or two!')
+  
 end
 
-
-% Truncate grids and check to see if the state x is outside of either grid
+%% Truncate grids and check to see if the state x is outside of either grid
 gs2D = cell(size(grids));
 datas1 = cell(size(datas));
 for i = 1:length(grids)
@@ -78,7 +75,8 @@ for i = 1:length(grids)
   
   % If x is too close to the edge of the grid, the value is assumed to be
   % the maximum value over the entire grid.
-  if any(gs2D{i}.N<3)
+  if any(gs2D{i}.N < 3)
+    warning('Less than 3 grid points in range!')
     TD_out_x.value = max(datas{i}(:));
     TD_out_x.grad = [];
     TD_out = [];
@@ -87,7 +85,7 @@ for i = 1:length(grids)
   end
 end
 
-% Initialize value function within small grid bounds
+%% Initialize value function within grid bounds
 data1s = zeros([gs2D{1}.N' length(tau)]);
 data2s = zeros([gs2D{2}.N' length(tau)]);
 data1s(:,:,1) = datas1{1};
@@ -123,12 +121,13 @@ data2_4D = repmat(data2_4D(1,1,:,:), gs4D.N(1), gs4D.N(2), 1, 1);
 % Create initial conditions
 data4Ds = max(data1_4D, data2_4D);
 
-% Initialize time-to-reach value function
-if nargout>2
+% Initialize time-to-reach value function if needed
+if nargout > 2
   TTR_out.value = 1e5 * ones(size(data4Ds));
   TTR_out.value(data4Ds<=0) = 0;
 end
 
+%% Reconstruct 4D value function over time
 for i = 2:length(tau)
   % Save value function at the last time step
   data4Ds_last = data4Ds;
@@ -139,7 +138,7 @@ for i = 2:length(tau)
   data2_4D(1,1,:,:) = data2s(:,:,i);
   data2_4D = repmat(data2_4D(1,1,:,:), gs4D.N(1), gs4D.N(2), 1, 1);
   
-  % Freeze the value function
+  % Take maximum and freeze the value function
   data4Ds = max(data1_4D, data2_4D);
   data4Ds = min(data4Ds, data4Ds_last);
   
@@ -153,13 +152,14 @@ for i = 2:length(tau)
   
   % Update time-to-reach value function
   if nargout>2
-    TTR_out.value(data4Ds<=0) = min(TTR_out.value(data4Ds<=0), tau(i));
+    TTR_out.value(data4Ds <= 0) = min(TTR_out.value(data4Ds <= 0), tau(i));
   end
 end
 
+%% Process outputs
 % If input state is a single vector, return the value function at that
 % vector
-if size(x,2)==1
+if size(x,2) == 1
   TD_out_x.value = eval_u(gs4D, data4Ds, x');
 else
   TD_out_x.value = [];
@@ -178,7 +178,7 @@ else
 end
 
 % Output time-to-reach value gradients
-if nargout>2
+if nargout > 2
   TTR_out.g = gs4D;
   TTR_out.grad = extractCostates(gs4D, TTR_out.value);
 end
