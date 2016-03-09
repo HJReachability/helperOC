@@ -4,11 +4,13 @@ function [TD_out_x, TD_out, TTR_out] = recon2x2D(tau, grids, datas, x, t)
 % Inputs:  tau   - time stamps for datas
 %          grids - grids{i} is the grid corresponding to datas{i}
 %          datas - 2D value functions
-%          x     - If a vector, it's the state at which 4D value function
-%                  is reconstructed.
-%                  If two vectors, it specifies the bounds on the 4D grid
-%                  within which the 4D value function is reconstructed
-%          t     - time to evaluate 4D value function 
+%          x     - If a 4x1 vector, it's the state at which 4D value function
+%                    is reconstructed.
+%                  If a 4x2 matrix, it specifies the bounds on the 4D grid
+%                    within which the 4D value function is reconstructed
+%                  If 'full', the range of reconstruction would be the entire
+%                    range of grids
+%          t     - time to evaluate 4D value function
 %                  (defaults to minimum time at which V(t,x) <= 0)
 %
 % Outputs: TD_out_x - value and gradient at state x
@@ -36,10 +38,21 @@ end
 ind = min(length(tau), find(tau<=t, 1, 'last') + 1);
 tau = tau(1:ind);
 
+
+% Range for full reconstruction
+if ischar(x)
+  if strcmp(x, 'full')
+    x = [grids{1}.min - 5 grids{1}.max + 5; grids{2}.min - 5 grids{2}.max + 5];
+  else
+    error('Unknown range!')
+  end
+end
+
 % Make sure the input state is always a column vector or two
 if size(x,2) > size(x,1)
   x = x';
 end
+
 
 % Reconstruction is done inside grid bounds specified by xmin and xmax
 if size(x,2) == 1
@@ -54,14 +67,15 @@ else
   error('Input state x must be a column vector or two!')
 end
 
+
 % Truncate grids and check to see if the state x is outside of either grid
 gs2D = cell(size(grids));
 datas1 = cell(size(datas));
 for i = 1:length(grids)
   % Truncate grid according to specified limits
   [gs2D{i}, datas1{i}] = truncateGrid(grids{i}, datas{i}(:,:,1), ...
-                               xmin(2*i-1:2*i), xmax(2*i-1:2*i));
-
+    xmin(2*i-1:2*i), xmax(2*i-1:2*i));
+  
   % If x is too close to the edge of the grid, the value is assumed to be
   % the maximum value over the entire grid.
   if any(gs2D{i}.N<3)
@@ -93,9 +107,9 @@ gs4D = processGrid(gs4D);
 % Copy large 2D look-up table into our small grid
 for i = 1:length(tau)
   [~, data1s(:,:,i)] = truncateGrid(grids{1}, datas{1}(:,:,i), ...
-                               xmin(1:2), xmax(1:2));
+    xmin(1:2), xmax(1:2));
   [~, data2s(:,:,i)] = truncateGrid(grids{2}, datas{2}(:,:,i), ...
-                       xmin(3:4), xmax(3:4));
+    xmin(3:4), xmax(3:4));
 end
 
 % Extend x slice across y
@@ -139,7 +153,7 @@ for i = 2:length(tau)
   
   % Update time-to-reach value function
   if nargout>2
-    TTR_out.value(data4Ds<0) = min(TTR_out.value(data4Ds<0), tau(i));
+    TTR_out.value(data4Ds<=0) = min(TTR_out.value(data4Ds<=0), tau(i));
   end
 end
 
