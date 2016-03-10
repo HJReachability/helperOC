@@ -16,7 +16,7 @@ function p = calculateCostate(g, P, x)
 % Updated 2016-02-20
 
 % Check input
-p = zeros(size(x,1), g.dim);
+p = zeros(g.dim, 1);
 
 % Interpolate gradient
 for i = 1:g.dim
