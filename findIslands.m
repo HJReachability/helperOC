@@ -40,6 +40,17 @@ if nargin < 4
   nSet = nSet - 1;
 end
 
+%% Dealing with periodicity
+for i = 1:g.dim
+  if isequal(g.bdry{i}, @addGhostPeriodic)
+    % Grid points
+    g.vs{i} = cat(1, g.vs{i}, g.vs{i}(end) + g.dx(i));
+
+    % Input data
+    data = eval(periodicAugmentCmd(i, g.dim));
+  end
+end
+
 %% Find all indices below the specified level
 switch g.dim
   case 2
@@ -49,7 +60,6 @@ switch g.dim
     [i, j, k] = ind2sub(size(data), find(data <= level));
     shape = [i j k];
 end
-
 
 %% Go through each index to gather neighbors
 isls = {};
