@@ -26,29 +26,7 @@ end
 
 %% Default neighbor set (All indices i-1 to i+1 in all dimensions)
 if nargin < 4
-  nSet = zeros(3^g.dim, g.dim);
-  
-  % Count in base 3 to get all sequences involving digits 0 to 2
-  for i = 1:3^g.dim
-    str = dec2base(i-1, 3, g.dim);
-    for j = 1:g.dim
-      nSet(i, j) = str2double(str(j));
-    end
-  end
-  
-  % Subtract 1 to get the indices relative to i
-  nSet = nSet - 1;
-end
-
-%% Dealing with periodicity
-for i = 1:g.dim
-  if isequal(g.bdry{i}, @addGhostPeriodic)
-    % Grid points
-    g.vs{i} = cat(1, g.vs{i}, g.vs{i}(end) + g.dx(i));
-
-    % Input data
-    data = eval(periodicAugmentCmd(i, g.dim));
-  end
+  nSet = create_nSet(g.dim);
 end
 
 %% Find all indices below the specified level
@@ -67,7 +45,7 @@ rNs = {};
 rs = {};
 cs = {};
 while ~isempty(shape)
-  [isl, rN, r, c] = findIslandSingle(g.vs, shape(1, :), shape, nSet);
+  [isl, rN, r, c] = findIslandSingle(g, shape(1, :), shape, nSet);
   isls = [isls; isl];
   rNs = [rNs; rN];
   rs = [rs; r];
@@ -78,16 +56,16 @@ while ~isempty(shape)
 end
 end
 
-function [isl, rN, r, c] = findIslandSingle(vs, ind, indSet, nSet)
+function [isl, rN, r, c] = findIslandSingle(g, ind, indSet, nSet)
 % [isl, rN, r, c] = findIslandSingle(vs, ind, indSet, nSet)
 %
 % Finds the island that the index ind belongs to in the set of indices indSet
-% 
+%
 % Inputs:  vs     - vector of grid points
 %          ind    - index of consideration
 %          indSet - set of indices from which the island is determined
 %          nSet   - neighborhood set
-% 
+%
 % Outputs: isl    - list of indices in the island
 %          rN     - radius of island in terms of # of grid points
 %          r      - radius of island
@@ -99,12 +77,39 @@ isl = ind;
 
 check_ind = 1;
 while check_ind <= size(isl, 1)
+  indToCheck = isl(check_ind, :);
+  
   % neighbors of current point under consideration
-  nbs = gadd(isl(check_ind, :), nSet);
-
+  nbs = gadd(indToCheck, nSet);
+  
+  % If there's a periodic grid, add neighbors for boundary points if needed
+  for i = 1:g.dim
+    if isequal(g.bdry{i}, @addGhostPeriodic)
+      if indToCheck(i) == 1
+        extra_nSet2D = create_nSet(g.dim - 1);
+        extra_nbs2D = gadd(indToCheck([1:i-1 i+1:end]), extra_nSet2D);
+        
+        extra_nbs = [extra_nbs2D(:, 1:i-1) ...
+          g.N(i)*ones(size(extra_nbs2D, 1), 1) extra_nbs2D(:, i+1:end)];
+        
+        nbs = [nbs; extra_nbs];
+      end
+      
+      if indToCheck(i) == g.N(i)
+        extra_nSet2D = create_nSet(g.dim - 1);
+        extra_nbs2D = gadd(indToCheck([1:i-1 i+1:end]), extra_nSet2D);
+        
+        extra_nbs = [extra_nbs2D(:, 1:i-1) ones(size(extra_nbs2D, 1), 1) ...
+          extra_nbs2D(:, i+1:end)];
+        
+        nbs = [nbs; extra_nbs];
+      end
+    end
+  end
+  
   % find common indices in neighbors and indices set
   [newInds, ii] = intersect(indSet, nbs, 'rows');
-
+  
   % add common indices to list of island indices, and remove it from indices set
   isl = [isl; newInds];
   isl = unique(isl, 'rows', 'stable');
@@ -117,9 +122,55 @@ rN = zeros(dim, 1);
 r = zeros(dim, 1);
 c = zeros(dim, 1);
 for i = 1:dim
-  rN(i) = ( max((isl(:, i))) - min((isl(:, i))) ) / 2;
-  r(i) = ( max(vs{i}(isl(:, i))) - min(vs{i}(isl(:, i))) ) / 2;
-  c(i) = ( max(vs{i}(isl(:, i))) + min(vs{i}(isl(:, i))) ) / 2;
+  % Checking for situations where periodicity is causing multiple island pieces
+  if isequal(g.bdry{i}, @addGhostPeriodic)
+    vp_isl_slice = virtual_pd_isl(unique(isl(:, i)), g.N(i));
+  else
+    vp_isl_slice = isl(:, i);
+  end
+  
+  rN(i) = (max(vp_isl_slice) - min(vp_isl_slice)) / 2;
+  r(i) = rN(i) * g.dx(i);
+  c(i) = g.min(i) + g.dx(i) * ( max(vp_isl_slice) + min(vp_isl_slice) ) / 2;
 end
 
+end
+
+function vp_isl = virtual_pd_isl(isl_slice, N)
+
+% Check to see if island has two pieces which are actually the same piece
+pd = false;
+if any(isl_slice == 1) && any(isl_slice == N)
+  pd = true;
+end
+
+
+if pd
+  % If island has two pieces, find the index of the top piece
+  for k = 1:length(isl_slice)-1
+    if isl_slice(k+1) - isl_slice(k) ~= 1;
+      break
+    end
+  end
+  vp_isl = [isl_slice(k+1:end); isl_slice(1:k) + N];
+  
+else
+  vp_isl = isl_slice;
+  
+end
+end
+
+function nSet = create_nSet(dim)
+nSet = zeros(3^dim, dim);
+
+% Count in base 3 to get all sequences involving digits 0 to 2
+for i = 1:3^dim
+  str = dec2base(i-1, 3, dim);
+  for j = 1:dim
+    nSet(i, j) = str2double(str(j));
+  end
+end
+
+% Subtract 1 to get the indices relative to i
+nSet = nSet - 1;
 end

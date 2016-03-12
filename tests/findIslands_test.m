@@ -4,8 +4,9 @@ function findIslands_test()
 g.dim = 2;
 g.min = -ones(g.dim, 1);
 g.max = ones(g.dim, 1);
-g.N = 151;
-g.bdry = @addGhostExtrapolate;
+g.N = [151; 151];
+g.bdry = {@addGhostExtrapolate; @addGhostPeriodic};
+g.max(2) = g.max(2) * (1 - 1 / g.N(2));
 g = processGrid(g);
 
 % Make two spheres
@@ -14,8 +15,13 @@ c1 = [0.3; 0.2];
 data = shapeSphere(g, c1, r1);
 
 r2 = 0.2;
-c2 = [-0.2; 0.3];
+c2 = [-0.2; 0.9];
 data = min(data, shapeSphere(g, c2, r2));
+data = min(data, shapeSphere(g, c2-[0; 2], r2));
+
+figure;
+contour(g.xs{1}, g.xs{2}, data, [0 0], 'r');
+axis square
 
 % Find islands
 tic
@@ -29,13 +35,15 @@ disp(['  computed: ' num2str(length(isls)) ' | true: 2'])
 r = [r1 r2];
 c = [c1 c2];
 for i = 1:length(isls)
-  disp(['Radius ' num2str(i)])
-  disp(['  computed: (' num2str(rs{i}(1)) ' ' num2str(rs{i}(2)) ...
-    ') | true: (' num2str(r(i)) ', ' num2str(r(i)) ')'])
-  
-  disp(['Center ' num2str(i)])
-  disp(['  computed: (' num2str(cs{i}(1)) ' ' num2str(cs{i}(2)) ...
-    ') | true: (' num2str(c(1, i)) ', ' num2str(c(2, i)) ')'])  
+  disp('Computed')
+  disp(['  radius: (' num2str(rs{i}(1)) ', ' num2str(rs{i}(2)) ')'])
+  disp(['  center: (' num2str(cs{i}(1)) ', ' num2str(cs{i}(2)) ')'])  
+end
+
+for i = 1:length(isls)
+  disp('True')
+  disp(['  radius: (' num2str(r(i)) ', ' num2str(r(i)) ')'])
+  disp(['  center: (' num2str(c(1, i)) ', ' num2str(c(2, i)) ')'])
 end
 
 %% Test in 3D
@@ -45,7 +53,7 @@ g.dim = 3;
 g.min = -ones(g.dim, 1);
 g.max = ones(g.dim, 1);
 g.N = 101;
-g.bdry = @addGhostExtrapolate;
+g.bdry = @addGhostPeriodic;
 g = processGrid(g);
 
 % Make two spheres
