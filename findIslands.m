@@ -85,22 +85,19 @@ while check_ind <= size(isl, 1)
   % If there's a periodic grid, add neighbors for boundary points if needed
   for i = 1:g.dim
     if isequal(g.bdry{i}, @addGhostPeriodic)
-      if indToCheck(i) == 1
+      % If the current point is a boundary point (lower or upper)
+      if indToCheck(i) == 1 || indToCheck(i) == g.N(i)
         extra_nSet2D = create_nSet(g.dim - 1);
         extra_nbs2D = gadd(indToCheck([1:i-1 i+1:end]), extra_nSet2D);
+        
+        otherSide = 1;
+        if indToCheck(i) == 1
+          otherSide = g.N(i);
+        end
         
         extra_nbs = [extra_nbs2D(:, 1:i-1) ...
-          g.N(i)*ones(size(extra_nbs2D, 1), 1) extra_nbs2D(:, i+1:end)];
-        
-        nbs = [nbs; extra_nbs];
-      end
-      
-      if indToCheck(i) == g.N(i)
-        extra_nSet2D = create_nSet(g.dim - 1);
-        extra_nbs2D = gadd(indToCheck([1:i-1 i+1:end]), extra_nSet2D);
-        
-        extra_nbs = [extra_nbs2D(:, 1:i-1) ones(size(extra_nbs2D, 1), 1) ...
-          extra_nbs2D(:, i+1:end)];
+          otherSide*ones(size(extra_nbs2D, 1), 1) ...
+          extra_nbs2D(:, i:end)];
         
         nbs = [nbs; extra_nbs];
       end
@@ -129,21 +126,29 @@ for i = 1:dim
     vp_isl_slice = isl(:, i);
   end
   
+  % Compute outputs
   rN(i) = (max(vp_isl_slice) - min(vp_isl_slice)) / 2;
   r(i) = rN(i) * g.dx(i);
   c(i) = g.min(i) + g.dx(i) * ( max(vp_isl_slice) + min(vp_isl_slice) ) / 2;
+  
+  if isequal(g.bdry{i}, @addGhostPeriodic) && c(i) > g.max(i)
+    c(i) = c(i) - (g.max(i) + g.dx(i) - g.min(i));
+  end
 end
 
 end
 
 function vp_isl = virtual_pd_isl(isl_slice, N)
+% vp_isl = virtual_pd_isl(isl_slice, N)
+%
+% Processes the list of indices to detect whether the island has been broken
+% into two pieces due to periodicity
 
 % Check to see if island has two pieces which are actually the same piece
 pd = false;
 if any(isl_slice == 1) && any(isl_slice == N)
   pd = true;
 end
-
 
 if pd
   % If island has two pieces, find the index of the top piece

@@ -19,10 +19,6 @@ c2 = [-0.2; 0.9];
 data = min(data, shapeSphere(g, c2, r2));
 data = min(data, shapeSphere(g, c2-[0; 2], r2));
 
-figure;
-contour(g.xs{1}, g.xs{2}, data, [0 0], 'r');
-axis square
-
 % Find islands
 tic
 [isls, rNs, rs, cs] = findIslands(g, data);
@@ -57,11 +53,12 @@ g.bdry = @addGhostPeriodic;
 g = processGrid(g);
 
 % Make two spheres
-r1 = 0.15;
-c1 = [0.3; 0.2; -0.5];
+r1 = 0.2;
+c1 = [-0.9; 0.2; -0.5];
 data = shapeSphere(g, c1, r1);
+data = min(data, shapeSphere(g, c1 + [2; 0; 0], r1));
 
-r2 = 0.02;
+r2 = 0.05;
 c2 = [-0.2; 0.3; 0.5];
 data = min(data, shapeSphere(g, c2, r2));
 
@@ -76,15 +73,19 @@ disp(['  computed: ' num2str(length(isls)) ' | true: 2'])
 
 r = [r1 r2];
 c = [c1 c2];
+
 for i = 1:length(isls)
-  disp(['Radius ' num2str(i)])
-  disp(['  computed: (' num2str(rs{i}(1)) ' ' num2str(rs{i}(2)) ' ' ... 
-    num2str(rs{i}(3)) ') | true: (' num2str(r(i)) ', ' num2str(r(i)) ', ' ...
-    num2str(r(i)) ')'])
-  
-  disp(['Center ' num2str(i)])
-  disp(['  computed: (' num2str(cs{i}(1)) ' ' num2str(cs{i}(2)) ' ' ... 
-    num2str(cs{i}(3)) ') | true: (' num2str(c(1,i)) ', ' num2str(c(2,i)) ', ' ...
-    num2str(c(3,i)) ')'])
+  disp('Computed')
+  disp(['  radius: (' num2str(rs{i}(1)) ', ' num2str(rs{i}(2)) ', ' ...
+    num2str(rs{i}(3)) ')'])
+  disp(['  center: (' num2str(cs{i}(1)) ', ' num2str(cs{i}(2)) ', ' ...
+    num2str(cs{i}(3)) ')'])  
+end
+
+for i = 1:length(isls)
+  disp('True')
+  disp(['  radius: (' num2str(r(i)) ', ' num2str(r(i)) ', ' num2str(r(i)) ')'])
+  disp(['  center: (' num2str(c(1, i)) ', ' num2str(c(2, i)) ', ' ...
+    num2str(c(3, i)) ')'])
 end
 end
