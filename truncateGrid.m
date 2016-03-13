@@ -28,7 +28,7 @@ for i = 1:gNew.dim
     gNew.bdry{i} = @addGhostExtrapolate;
   end
 end
-
+% keyboard
 gNew = processGrid(gNew);
 
 % Truncate everything that's outside of xmin and xmax

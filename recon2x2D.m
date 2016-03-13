@@ -52,8 +52,8 @@ end
 
 % Reconstruction is done inside grid bounds specified by xmin and xmax
 if size(x,2) == 1
-  widthx = 1.6*grids{1}.dx;
-  widthy = 1.6*grids{2}.dx;
+  widthx = 2.6*grids{1}.dx;
+  widthy = 2.6*grids{2}.dx;
   xmin = [x(1:grids{1}.dim) - widthx; x(grids{1}.dim+1:end) - widthy];
   xmax = [x(1:grids{1}.dim) + widthx; x(grids{1}.dim+1:end) + widthy];
   
