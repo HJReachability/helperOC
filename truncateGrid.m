@@ -20,7 +20,7 @@ gNew.max = zeros(gNew.dim, 1);
 gNew.bdry = gOld.bdry;
 
 for i = 1:gNew.dim
-  gNew.vs{i} = gOld.vs{i}(gOld.vs{i}>xmin(i) & gOld.vs{i}<xmax(i));
+  gNew.vs{i} = gOld.vs{i}(gOld.vs{i} > xmin(i) & gOld.vs{i} < xmax(i));
   gNew.N(i) = length(gNew.vs{i});
   gNew.min(i) = min(gNew.vs{i});
   gNew.max(i) = max(gNew.vs{i});
@@ -28,7 +28,7 @@ for i = 1:gNew.dim
     gNew.bdry{i} = @addGhostExtrapolate;
   end
 end
-% keyboard
+
 gNew = processGrid(gNew);
 
 % Truncate everything that's outside of xmin and xmax

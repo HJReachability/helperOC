@@ -22,7 +22,7 @@ function [TD_out_x, TD_out, TTR_out] = recon2x2D(tau, grids, datas, x, t)
 %
 % Created by Mo Chen
 % Modified, Kene Akametalu
-% Modified, Mo Chen, 2016-03-08
+% Modified, Mo Chen, 2016-04-01
 
 %% Input check and defaults
 % Check input grid and data format
@@ -32,7 +32,7 @@ end
 
 % By default, do reconstruction over the entire space
 if nargin < 4
-  x = [grids{1}.min - 5 grids{1}.max + 5; grids{2}.min - 5 grids{2}.max + 5];;
+  x = [grids{1}.min - 5 grids{1}.max + 5; grids{2}.min - 5 grids{2}.max + 5];
 end
 
 % Find smallest time in time vector that is bigger than the specified time.
@@ -50,6 +50,7 @@ if size(x,2) > size(x,1)
   x = x';
 end
 
+dims = zeros(1, 4);
 % Reconstruction is done inside grid bounds specified by xmin and xmax
 if size(x,2) == 1
   widthx = 2.6*grids{1}.dx;
@@ -60,6 +61,25 @@ if size(x,2) == 1
 elseif size(x,2) == 2
   xmin = x(:,1);
   xmax = x(:,2);
+  
+  % If min and max are equal, add a half grid point width
+  xs = [];
+  for i = 1:length(xmin)
+    if xmin(i) == xmax(i)
+      dims(i) = 1;
+      xs = cat(2, xs, xmin(i));
+      
+      if i <= 2
+        xmin(i) = xmin(i) - 1.5 * grids{1}.dx(i);
+        xmax(i) = xmax(i) + 1.5 * grids{1}.dx(i);
+      else
+        xmin(i) = xmin(i) - 1.5 * grids{2}.dx(i-2);
+        xmax(i) = xmax(i) + 1.5 * grids{2}.dx(i-2);
+      end
+
+    end
+  end
+  
 else
   error('Input state x must be a column vector or two!')
   
@@ -71,18 +91,7 @@ datas1 = cell(size(datas));
 for i = 1:length(grids)
   % Truncate grid according to specified limits
   [gs2D{i}, datas1{i}] = truncateGrid(grids{i}, datas{i}(:,:,1), ...
-    xmin(2*i-1:2*i), xmax(2*i-1:2*i));
-  
-  % If x is too close to the edge of the grid, the value is assumed to be
-  % the maximum value over the entire grid.
-  if any(gs2D{i}.N < 3)
-    warning('Less than 3 grid points in range!')
-    TD_out_x.value = max(datas{i}(:));
-    TD_out_x.grad = [];
-    TD_out = [];
-    TTR_out = [];
-    return
-  end
+    xmin(2*i-1:2*i), xmax(2*i-1:2*i));  
 end
 
 %% Initialize value function within grid bounds
@@ -166,9 +175,28 @@ else
 end
 
 % Output values on grid that's within the specified bounds
-TD_out.value = data4Ds;
-TD_out.g = gs4D;
-TD_out.grad = extractCostates(gs4D, data4Ds);
+switch nnz(dims)
+  case 0
+    TD_out.g = gs4D;
+    TD_out.value = data4Ds;
+
+  case 1
+    % Project to 3D
+    [TD_out.g, TD_out.value] = proj3D(gs4D, data4Ds, dims, xs);
+    
+  case 2
+    % Project to 2D
+    [TD_out.g, TD_out.value] = proj2D(gs4D, data4Ds, dims, xs);
+    
+  otherwise
+    error('proj1D not implemented yet!')
+end
+
+if all(TD_out.g.N >= 3)
+  TD_out.grad = extractCostates(TD_out.g, TD_out.value);
+else
+  TD_out.grad = [];
+end
 
 % If input state is a single vector, return the gradient at that vector
 if size(x,2)==1
@@ -178,9 +206,29 @@ else
 end
 
 % Output time-to-reach value gradients
-if nargout > 2
-  TTR_out.g = gs4D;
-  TTR_out.grad = extractCostates(gs4D, TTR_out.value);
+if nargout < 3
+  return
 end
 
+switch nnz(dims)
+  case 0
+    TTR_out.g = gs4D;
+
+  case 1
+    % Project to 3D
+    [TTR_out.g, TTR_out.value] = proj3D(gs4D, TTR_out.value, dims, xs);
+    
+  case 2
+    % Project to 2D
+    [TTR_out.g, TTR_out.value] = proj2D(gs4D, TTR_out.value, dims, xs);
+    
+  otherwise
+    error('proj1D not implemented yet!')
+end
+  
+if all(TTR_out.g.N >= 3)
+  TTR_out.grad = extractCostates(TTR_out.g, TTR_out.value);
+else
+  TTR_out.grad = [];
+end
 end

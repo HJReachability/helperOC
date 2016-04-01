@@ -1,5 +1,5 @@
 function [g3D, data3D] = proj3D(g4D, data4D, dims, xs, N3D)
-% [g3D, data3D] = proj3D(g4D, dims, N2D, data4D, xs)
+% [g3D, data3D] = proj3D(g4D, data4D, dims, xs, N3D)
 % Projects 4D data down to 3D onto the dimension dim at the point xs
 %
 % Inputs:
