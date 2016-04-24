@@ -1,21 +1,45 @@
 function [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
-  minWithZero, compRegion)
+  minWith, obstacles, accuracy, compRegion)
 % [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
-%   minWithZero, compRegion)
+%   minWith, obstacles, compRegion)
 %
 % Solves HJIPDE with initial conditions data0, at times tau, and with
-% parameters schemeData
+% parameters schemeData and obstacles
+%
+% Inputs:
+%   data0      - initial value function
+%   tau        - list of computation times
+%   schemeData - problem parameters passed into the Hamiltonian function
+%                  .g: grid (required!)
+%   minWith    - set to 'zero' to do min with zero
+%              - set to 'none' to compute reachable set (not tube)
+%              - set to 'data0' to do min with data0 (for variational
+%                inequality)
+%   obstacles  - a single obstacle or a list of obstacles with time stamps
+%                tau (obstacles must have same time stamp as the solution)
+%   compRegion - unused for now (meant to limit computation region)
+%
+% Outputs:
+%   data - solution corresponding to grid g and time vector tau
+%   tau  - list of computation times (redundant)
+%
+% Mo Chen, 2016-04-23
 
+%% Default parameters
 if numel(tau) < 2
   error('Time vector must have at least two elements!')
 end
 
 if nargin < 4
-  minWithZero = true;
+  minWith = 'zero';
 end
 
 if nargin < 5
-  compRegion = [];
+  obstacles = [];
+end
+
+if nargin < 6
+  accuracy = 'veryHigh';
 end
 
 %% SchemeFunc and SchemeData
@@ -24,12 +48,11 @@ g = schemeData.grid;
 
 %% Numerical approximation functions
 dissType = 'global';
-accuracy = 'veryHigh';
 [schemeData.dissFunc, integratorFunc, schemeData.derivFunc] = ...
   getNumericalFuncs(dissType, accuracy);
 
 %% Time integration
-integratorOptions = odeCFLset('factorCFL', 0.5, 'stats', 'on');
+integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on');
 
 startTime = cputime;
 
@@ -39,12 +62,19 @@ eval(updateData_cmd(g.dim, '1'));
 for i = 2:length(tau)
   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0 = y0(:);
-  [ ~, y ] = feval(integratorFunc, schemeFunc, [tau(i-1) tau(i)], y0,...
+  [~, y] = feval(integratorFunc, schemeFunc, [tau(i-1) tau(i)], y0, ...
                     integratorOptions, schemeData);
+  
   eval(updateData_cmd(g.dim, 'i'));
   
-  if minWithZero
-    eval(minWithZero_cmd(g.dim));
+  % Obstacles
+  if ~isempty(obstacles)
+    eval(maskWithObs_cmd(g.dim, numDims(obstacles) == g.dim));
+  end
+  
+  % Min with zero
+  if ~strcmp(minWith, 'none')
+    eval(minWith_cmd(g.dim, minWith));
   end
 end
 
@@ -69,15 +99,41 @@ else
 end
 end
 
-function cmdStr = minWithZero_cmd(dims)
+function cmdStr = maskWithObs_cmd(dims, single)
 % data(:,:,:,i)
 data_i = get_dataStr(dims, 'i');
 
-% data(:,:,:,i-1)
-data_im1 = get_dataStr(dims, 'i-1');
+if single
+  % data(:,:,:,i) = max(data(:,:,:,i), -obstacles);
+  cmdStr = [data_i ' = max(' data_i ', -obstacles);'];
+else
+  % data(:,:,:,i) = max(data(:,:,:,i), -obstacles(:,:,:,i));
+  obstacle_i = get_dataStr(dims, 'i', 'obstacles');
+  cmdStr = [data_i ' = max(' data_i ', -' obstacle_i ');'];
+end
 
-% data(:,:,:,i) = min(data(:,:,:,i), data(:,:,:,i-1));
-cmdStr = [data_i ' = min(' data_i ', ' data_im1 ');'];
+end
+
+
+function cmdStr = minWith_cmd(dims, minWith)
+% data(:,:,:,i)
+data_i = get_dataStr(dims, 'i');
+
+if strcmp(minWith, 'zero')
+  % data(:,:,:,i-1)
+  data_im1 = get_dataStr(dims, 'i-1');
+
+  % data(:,:,:,i) = min(data(:,:,:,i), data(:,:,:,i-1));
+  cmdStr = [data_i ' = min(' data_i ', ' data_im1 ');'];
+  
+elseif strcmp(minWith, 'data0')
+  % data(:,:,:,i) = min(data(:,:,:,i), data0);
+  cmdStr = [data_i ' = min(' data_i ', data0);'];  
+  
+else
+  error('Unknown minWith! Must be ''zero'' or ''data0''!')
+end
+
 end
 
 function [dissFunc, integratorFunc, derivFunc] = ...
