@@ -111,4 +111,22 @@ for i = 1:numPlots
   camlight right
   drawnow
 end
+
+%% Test using single obstacle but few time steps
+obstacles = shapeCylinder(g, 3, [1.5; 1.5; 0], 0.75*R);
+tau = linspace(0, 2, 5);
+[data, tau] = HJIPDE_solve(data0, tau, schemeData, 'data0', obstacles);
+
+% Visualize
+figure;
+for i = 1:numPlots
+  subplot(spR, spC, i)
+  ind = ceil(i * length(tau) / numPlots);
+  visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
+    ['TD value function, t = ' num2str(tau(ind))]);
+  axis(g.axis)
+  camlight left
+  camlight right
+  drawnow
+end
 end

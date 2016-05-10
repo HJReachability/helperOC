@@ -42,6 +42,8 @@ if nargin < 6
   accuracy = 'veryHigh';
 end
 
+small = 1e-4;
+
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
 g = schemeData.grid;
@@ -52,7 +54,8 @@ dissType = 'global';
   getNumericalFuncs(dissType, accuracy);
 
 %% Time integration
-integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on');
+integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
+  'singleStep', 'on');
 
 startTime = cputime;
 
@@ -61,21 +64,42 @@ eval(updateData_cmd(g.dim, '1'));
 
 for i = 2:length(tau)
   y0 = eval(get_dataStr(g.dim, 'i-1'));
-  y0 = y0(:);
-  [~, y] = feval(integratorFunc, schemeFunc, [tau(i-1) tau(i)], y0, ...
-                    integratorOptions, schemeData);
+  y = y0(:);
+
+  tNow = tau(i-1);
+  while tNow < tau(i) - small
+    % Save previous data if needed
+    if strcmp(minWith, 'zero')
+      yLast = y;
+    end
+    
+    [tNow, y] = feval(integratorFunc, schemeFunc, [tNow tau(i)], y, ...
+                      integratorOptions, schemeData);
+
+    % Min with zero
+    if strcmp(minWith, 'zero')
+      y = min(y, yLast);
+    end
+    
+    % Min with data0
+    if strcmp(minWith, 'data0')
+      y = min(y, data0(:));
+    end
+    
+    % "Mask" using obstacles
+    if ~isempty(obstacles)
+      if numDims(obstacles) == g.dim
+        y = max(y, -obstacles(:));
+      else
+        % obstacle = obstacles(:,:,:,i)
+        obstacle_i = eval(get_dataStr(g.dim, 'i', 'obstacles'));
+        y = max(y, -obstacle_i(:));
+      end
+    end
+  end
   
+  % Reshape value function
   eval(updateData_cmd(g.dim, 'i'));
-  
-  % Obstacles
-  if ~isempty(obstacles)
-    eval(maskWithObs_cmd(g.dim, numDims(obstacles) == g.dim));
-  end
-  
-  % Min with zero
-  if ~strcmp(minWith, 'none')
-    eval(minWith_cmd(g.dim, minWith));
-  end
 end
 
 endTime = cputime;
@@ -97,43 +121,6 @@ else
   % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
   cmdStr = cat(2, cmdStr, 'reshape(y, schemeData.grid.shape);');
 end
-end
-
-function cmdStr = maskWithObs_cmd(dims, single)
-% data(:,:,:,i)
-data_i = get_dataStr(dims, 'i');
-
-if single
-  % data(:,:,:,i) = max(data(:,:,:,i), -obstacles);
-  cmdStr = [data_i ' = max(' data_i ', -obstacles);'];
-else
-  % data(:,:,:,i) = max(data(:,:,:,i), -obstacles(:,:,:,i));
-  obstacle_i = get_dataStr(dims, 'i', 'obstacles');
-  cmdStr = [data_i ' = max(' data_i ', -' obstacle_i ');'];
-end
-
-end
-
-
-function cmdStr = minWith_cmd(dims, minWith)
-% data(:,:,:,i)
-data_i = get_dataStr(dims, 'i');
-
-if strcmp(minWith, 'zero')
-  % data(:,:,:,i-1)
-  data_im1 = get_dataStr(dims, 'i-1');
-
-  % data(:,:,:,i) = min(data(:,:,:,i), data(:,:,:,i-1));
-  cmdStr = [data_i ' = min(' data_i ', ' data_im1 ');'];
-  
-elseif strcmp(minWith, 'data0')
-  % data(:,:,:,i) = min(data(:,:,:,i), data0);
-  cmdStr = [data_i ' = min(' data_i ', data0);'];  
-  
-else
-  error('Unknown minWith! Must be ''zero'' or ''data0''!')
-end
-
 end
 
 function [dissFunc, integratorFunc, derivFunc] = ...
