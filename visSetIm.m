@@ -1,9 +1,26 @@
 function h = visSetIm(g, data, color, level, sliceDim, applyLight)
 % h = visSetIm(g, data, color, level, sliceDim, applyLight)
-%
 % Code for quickly visualizing level sets
 %
+% Inputs: g          - grid structure
+%         data       - value function corresponding to grid g
+%         color      - (defaults to red)
+%         level      - level set to display (defaults to 0)
+%         sliceDim   - for 4D sets, choose the dimension of the slices (defaults
+%                      to last dimension)
+%         applyLight - Whether to apply camlight (defaults to true)
+%
+% Output: h - figure handle
+%
+% Adapted from Ian Mitchell's visualizeLevelSet function from the level set
+% toolbox
+%
 % Mo Chen, 2016-05-12
+
+%% Default parameters and input check
+if g.dim ~= numDims(data)
+  error('Grid dimension is inconsistent with data dimension!')
+end
 
 if nargin < 3
   color = 'r';
@@ -23,6 +40,7 @@ if nargin < 6
   applyLight = true;
 end
 
+%% Displays level set depending on dimension of grid and data
 switch g.dim
   case 2
     [~, h] = contour(g.xs{1}, g.xs{2}, data, [level level], 'color', color);
@@ -38,6 +56,10 @@ end
 
 %% 3D Visualization
 function h = visSetIm3D(g, data, color, level, applyLight)
+% h = visSetIm3D(g, data, color, level, applyLight)
+% Visualizes a 3D reachable set
+
+
 [ mesh_xs, mesh_data ] = gridnd2mesh(g, data);
 
 h = patch(isosurface(mesh_xs{:}, mesh_data, level));
@@ -57,6 +79,10 @@ end
 
 %% 4D Visualization
 function h = visSetIm4D(g, data, color, level, sliceDim, applyLight)
+% h = visSetIm4D(g, data, color, level, sliceDim, applyLight)
+% Visualizes a 4D reachable set
+%
+% Takes 6 slices in the dimension sliceDim and shows the 3D projections
 
 N = 6;
 spC = 3;
