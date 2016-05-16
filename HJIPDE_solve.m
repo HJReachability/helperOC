@@ -99,6 +99,7 @@ for i = 2:length(tau)
   end
   
   % Reshape value function
+  % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
   eval(updateData_cmd(g.dim, 'i'));
 end
 
