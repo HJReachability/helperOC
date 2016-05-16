@@ -10,7 +10,7 @@ function [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
 %   data0      - initial value function
 %   tau        - list of computation times
 %   schemeData - problem parameters passed into the Hamiltonian function
-%                  .g: grid (required!)
+%                  .grid: grid (required!)
 %   minWith    - set to 'zero' to do min with zero
 %              - set to 'none' to compute reachable set (not tube)
 %              - set to 'data0' to do min with data0 (for variational
