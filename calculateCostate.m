@@ -1,8 +1,8 @@
 function p = calculateCostate(g, P, x)
 % function p = calculateCostate(g, P, x)
-%
-% Calculates the gradient (costate) at x given an array of gradients stored
-% in P. Periodicity is automatically checked in eval_u
+%   This function is no longer needed... simply use eval_u(g, P, x).
+%   Calculates the gradient (costate) at x given an array of gradients 
+%   stored in P. Periodicity is automatically checked in eval_u.
 %
 % Inputs: 
 %   g - grid structure
@@ -13,14 +13,9 @@ function p = calculateCostate(g, P, x)
 %   p - interpolated gradient at x
 %
 % Mo Chen, 2015-10-15
-% Updated 2016-02-20
-
-% Check input
-p = zeros(g.dim, 1);
+% Updated 2016-05-18
 
 % Interpolate gradient
-for i = 1:g.dim
-  p(i) = eval_u(g, P{i}, x);
-end
+p = eval_u(g, P, x);
 
 end

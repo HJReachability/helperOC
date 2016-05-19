@@ -12,16 +12,19 @@ function eval_u_test()
 % Errors should be very small
 addpath('..')
 
-%% Test 1
+%% Test 1: Basic test using spheres
 eval_u_test1()
 
-%% Test 2
+%% Test 2: Periodic grids
 eval_u_test2()
+
+%% Test 3: Multiple value functions
+eval_u_test3()
 end
 
 function eval_u_test1()
 disp('Test 1: Spheres')
-load('spheres2346D')
+load('spheres2346D', 'g', 'sphere', 'dims')
 
 N = 1000;
 
@@ -116,4 +119,26 @@ for i = 1:length(dims)
   disp([num2str(dims(i)) 'D error = ' num2str(error)])
 end
 
+end
+
+function eval_u_test3()
+disp('Test 3: Multiple datas')
+load('spheres2346D')
+
+N = 100;
+
+for i = 1:length(dims)
+  % Randomly create a list of points
+  x = rand(N, dims(i));
+  
+  eval_values = zeros(size(x));
+  for k = 1:N
+  % Evaluated distance to sphere
+    eval_values(k,:) = eval_u(g{i}, P{i}, x(k,:))';
+  end
+  
+  % Error
+  error = sqrt(sum((x(:) - eval_values(:)).^2))/N;
+  disp([num2str(dims(i)) 'D error = ' num2str(error)])
+end
 end
