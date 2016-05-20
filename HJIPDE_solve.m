@@ -59,7 +59,12 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
 
 startTime = cputime;
 
-data = zeros([size(data0) length(tau)]);
+if g.dim == 1
+  data = zeros(length(data0), length(tau));
+else
+  data = zeros([size(data0) length(tau)]);
+end
+
 eval(updateData_cmd(g.dim, '1'));
 
 for i = 2:length(tau)
