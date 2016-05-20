@@ -1,5 +1,5 @@
 function [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
-  minWith, obstacles, accuracy, compRegion)
+  minWith, extraargs)
 % [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
 %   minWith, obstacles, compRegion)
 %
@@ -15,9 +15,14 @@ function [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
 %              - set to 'none' to compute reachable set (not tube)
 %              - set to 'data0' to do min with data0 (for variational
 %                inequality)
-%   obstacles  - a single obstacle or a list of obstacles with time stamps
+%   extraargs  - this structure can be used to leverage other additional 
+%                functionalities within this function. It's subfields are:
+%    obstacles  - a single obstacle or a list of obstacles with time stamps
 %                tau (obstacles must have same time stamp as the solution)
-%   compRegion - unused for now (meant to limit computation region)
+%    compRegion - unused for now (meant to limit computation region)
+%    plotData   - information required to plot the data (need to fill in)
+%    stopInit   - stop the computation once the reachable set includes the
+%                 initial state
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -34,19 +39,28 @@ if nargin < 4
   minWith = 'zero';
 end
 
-if nargin < 5
-  obstacles = [];
-end
-
-if nargin < 6
-  accuracy = 'veryHigh';
-end
-
 small = 1e-4;
+
+%% Extract the information from extraargs
+% Extract the information about obstacles
+if isfield(extraargs, 'obstacles')
+    obstacles = extraargs.obstacles;
+end
+
+% Extract the information about stopInit
+if isfield(extraargs, 'stopInit')
+    initState = extraargs.stopInit.initState;
+end
 
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
 g = schemeData.grid;
+% Extract accuracy parameter o/w set default accuracy
+if isfield(schemeData, 'accuracy')
+    accuracy = schemeData.accuracy;
+else
+    accuracy = 'veryHigh';
+end
 
 %% Numerical approximation functions
 dissType = 'global';
@@ -106,6 +120,7 @@ for i = 2:length(tau)
   % Reshape value function
   % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
   eval(updateData_cmd(g.dim, 'i'));
+  
 end
 
 endTime = cputime;
