@@ -4,11 +4,11 @@ function hamValue = dubins3Dham(t, data, deriv, schemeData)
 %
 % Inputs:
 %   schemeData - problem parameters
-%     .grid: grid structure
+%     .grid:   grid structure
 %     .vrange: speed range of vehicle
-%     .wMax:  turn rate bounds (w \in [-wMax, wMax])
-%     .uMode: 'min' or 'max' (defaults to 'min')
-%     .dMax:  disturbance bounds (see below)
+%     .wMax:   turn rate bounds (w \in [-wMax, wMax])
+%     .uMode:  'min' or 'max' (defaults to 'min')
+%     .dMax:   disturbance bounds (see below)
 %     .dMode: 'min' or 'max' (defaults to 'max')
 %     .tMode: 'backward' or 'forward'
 %
@@ -46,10 +46,6 @@ if ~isfield(schemeData, 'tMode')
   schemeData.tMode = 'backward';
 end
 
-if ~isfield(schemeData, 'dMax')
-  schemeData.dMax = [0 0];
-end
-
 %% Modify Hamiltonian control terms based on uMode
 if strcmp(schemeData.uMode, 'min')
   % the speed when the determinant term (terms multiplying v) is positive
@@ -71,24 +67,25 @@ end
 % Speed control
 hamValue = (deriv{1}.*cos(g.xs{3}) + deriv{2}.*sin(g.xs{3}) >= 0) .* ...
   (deriv{1}.*cos(g.xs{3}) + deriv{2}.*sin(g.xs{3})) * v_when_det_pos + ...
-   (deriv{1}.*cos(g.xs{3}) + deriv{2}.*sin(g.xs{3}) < 0) .* ...
+  (deriv{1}.*cos(g.xs{3}) + deriv{2}.*sin(g.xs{3}) < 0) .* ...
   (deriv{1}.*cos(g.xs{3}) + deriv{2}.*sin(g.xs{3})) * v_when_det_neg;
 
 % turn rate control
 hamValue = hamValue + wTerm;
 
 %% Add disturbances if needed
-dTerm = schemeData.dMax(1)*sqrt(deriv{1}.^2 + deriv{2}.^2) + ...
-  schemeData.dMax(2)*abs(deriv{3});
-
-if strcmp(schemeData.dMode, 'min') 
-  hamValue = hamValue - dTerm;
-elseif strcmp(schemeData.dMode, 'max')
-  hamValue = hamValue + dTerm;
-else
-  error('Unknown dMode! Must be ''min'' or ''max''!')
+if isfield(schemeData, 'dMax')
+  dTerm = schemeData.dMax(1)*sqrt(deriv{1}.^2 + deriv{2}.^2) + ...
+    schemeData.dMax(2)*abs(deriv{3});
+  
+  if strcmp(schemeData.dMode, 'min')
+    hamValue = hamValue - dTerm;
+  elseif strcmp(schemeData.dMode, 'max')
+    hamValue = hamValue + dTerm;
+  else
+    error('Unknown dMode! Must be ''min'' or ''max''!')
+  end
 end
-
 
 %% Backward or forward reachable set
 if strcmp(schemeData.tMode, 'backward')
