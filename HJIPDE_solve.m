@@ -1,6 +1,7 @@
-function [data, tau] = HJIPDE_solve(data0, tau, schemeData, minWith, extraargs)
-% [data, tau] = HJIPDE_solve(data0, tau, schemeData, ...
-%   minWith, obstacles, compRegion)
+function [data, tau] = HJIPDE_solve( ...
+  data0, tau, schemeData, minWith, extraargs)
+% [data, tau] = HJIPDE_solve( ...
+%   data0, tau, schemeData, minWith, extraargs)
 %
 % Solves HJIPDE with initial conditions data0, at times tau, and with
 % parameters schemeData and obstacles
@@ -36,6 +37,10 @@ end
 
 if nargin < 4
   minWith = 'zero';
+end
+
+if nargin < 5
+  extraargs = [];
 end
 
 small = 1e-4;
