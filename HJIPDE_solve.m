@@ -31,7 +31,7 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %   extraOuts - This structure can be used to pass on extra outputs, for
 %               example:
 %      .stoptau: time at which the reachable set contains the initial
-%                state; tau and data vectors only contains the data till
+%                state; tau and data vectors only contain the data till
 %                stoptau time.
 %      .hT:      figure handle
 %
@@ -68,6 +68,8 @@ if isfield(extraargs, 'plotData')
   % Points to project other dimensions at. There should be an entry point
   % corresponding to each 0 in plotDims.
   projpt = extraargs.plotData.projpt;
+  % Initialize the figure for visualization
+  f = figure;
 end
 
 % Extract the information about stopInit
@@ -146,13 +148,19 @@ for i = 2:length(tau)
   % If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraargs, 'stopInit')
-    stopflag = checkInclusion(initState, g, y);
-    if stopflag
-      extraOuts.stoptau = tau(i);
-      otherdims = repmat({':'},1,ndims(data)-1);
-      data(otherdims{:}, i+1:end) = [];
-      tau(i+1:end) = [];
-      break;
+    if iscolumn(initState)
+      initState = initState';
+    end
+    reachSet = eval(get_dataStr(g.dim, 'i'));
+    initValue = eval_u(g, reachSet, initState);
+    if ~isnan(initValue)
+      if initValue <= 0
+        extraOuts.stoptau = tau(i);
+        otherdims = repmat({':'},1,g.dim);
+        data(otherdims{:}, i+1:size(data,g.dim+1)) = [];
+        tau(i+1:end) = [];
+        break;
+      end
     end
   end
   
@@ -172,23 +180,24 @@ for i = 2:length(tau)
     end
     
     % Visualize the reachable set
-    figure
+    figure(f)
+    reachSet = eval(get_dataStr(g.dim, 'i'));
     if projDims == 0
-      extraOuts.hT = visSetIm(g, y);
+      extraOuts.hT = visSetIm(g, reachSet);
     else
       str = sprintf('%d',[g.dim pDims]) ;
       switch str
         case '43'
-          [g3D, y3D] = proj3D(g, y, 1-plotDims, projpt);
+          [g3D, y3D] = proj3D(g, reachSet, 1-plotDims, projpt);
           extraOuts.hT = visSetIm(g3D, y3D);
         case {'42' , '32'}
-          [g2D, y2D] = proj2D(g, y, 1-plotDims, projpt);
+          [g2D, y2D] = proj2D(g, reachSet, 1-plotDims, projpt);
           extraOuts.hT = visSetIm(g2D, y2D);
         otherwise
           error('Projection on 1D is not implemented yet!')
       end
     end
-    
+    drawnow;
   end
 end
 
