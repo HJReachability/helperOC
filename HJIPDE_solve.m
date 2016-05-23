@@ -1,5 +1,5 @@
 function [data, tau, extraOuts] = HJIPDE_solve( ...
-  data0, tau, schemeData, minWith, extraargs)
+  data0, tau, schemeData, minWith, extraArgs)
 % [data, tau] = HJIPDE_solve( ...
 %   data0, tau, schemeData, minWith, extraargs)
 %
@@ -15,10 +15,10 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %              - set to 'none' to compute reachable set (not tube)
 %              - set to 'data0' to do min with data0 (for variational
 %                inequality)
-%   extraargs  - this structure can be used to leverage other additional
+%   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
-%     .obstacles:  a single obstacle or a list of obstacles with time 
-%                  stamps tau (obstacles must have same time stamp as the 
+%     .obstacles:  a single obstacle or a list of obstacles with time
+%                  stamps tau (obstacles must have same time stamp as the
 %                  solution)
 %     .compRegion: unused for now (meant to limit computation region)
 %     .plotData:   information required to plot the data (need to fill in)
@@ -47,7 +47,7 @@ if nargin < 4
 end
 
 if nargin < 5
-  extraargs = [];
+  extraArgs = [];
 end
 
 extraOuts = [];
@@ -55,26 +55,26 @@ small = 1e-4;
 
 %% Extract the information from extraargs
 % Extract the information about obstacles
-if isfield(extraargs, 'obstacles')
-  obstacles = extraargs.obstacles;
+if isfield(extraArgs, 'obstacles')
+  obstacles = extraArgs.obstacles;
 end
 
 % Extract the information about plotData
-if isfield(extraargs, 'plotData')
+if isfield(extraArgs, 'plotData')
   % Dimensions to visualize
   % It will be an array of 1s and 0s with 1s means that dimension should
   % be plotted.
-  plotDims = extraargs.plotData.plotDims;
+  plotDims = extraArgs.plotData.plotDims;
   % Points to project other dimensions at. There should be an entry point
   % corresponding to each 0 in plotDims.
-  projpt = extraargs.plotData.projpt;
+  projpt = extraArgs.plotData.projpt;
   % Initialize the figure for visualization
   f = figure;
 end
 
 % Extract the information about stopInit
-if isfield(extraargs, 'stopInit')
-  initState = extraargs.stopInit.initState;
+if isfield(extraArgs, 'stopInit')
+  initState = extraArgs.stopInit.initState;
 end
 
 %% SchemeFunc and SchemeData
@@ -130,7 +130,7 @@ for i = 2:length(tau)
     end
     
     % "Mask" using obstacles
-    if isfield(extraargs, 'obstacles')
+    if isfield(extraArgs, 'obstacles')
       if numDims(obstacles) == g.dim
         y = max(y, -obstacles(:));
       else
@@ -147,25 +147,23 @@ for i = 2:length(tau)
   
   % If commanded, stop the reachable set computation once it contains
   % the initial state.
-  if isfield(extraargs, 'stopInit')
+  if isfield(extraArgs, 'stopInit')
     if iscolumn(initState)
       initState = initState';
     end
     reachSet = eval(get_dataStr(g.dim, 'i'));
     initValue = eval_u(g, reachSet, initState);
-    if ~isnan(initValue)
-      if initValue <= 0
-        extraOuts.stoptau = tau(i);
-        otherdims = repmat({':'},1,g.dim);
-        data(otherdims{:}, i+1:size(data,g.dim+1)) = [];
-        tau(i+1:end) = [];
-        break;
-      end
+    if ~isnan(initValue) && initValue <= 0
+      extraOuts.stoptau = tau(i);
+      otherdims = repmat({':'},1,g.dim);
+      data(otherdims{:}, i+1:size(data,g.dim+1)) = [];
+      tau(i+1:end) = [];
+      break
     end
   end
   
   %% If commanded, visualize the level set.
-  if isfield(extraargs, 'plotData')
+  if isfield(extraArgs, 'plotData')
     % Number of dimensions to be plotted and to be projected
     pDims = nnz(plotDims);
     projDims = length(projpt);
