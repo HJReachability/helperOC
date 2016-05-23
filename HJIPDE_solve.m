@@ -1,4 +1,4 @@
-function [data, tau] = HJIPDE_solve( ...
+function [data, tau, extraOuts] = HJIPDE_solve( ...
   data0, tau, schemeData, minWith, extraargs)
 % [data, tau] = HJIPDE_solve( ...
 %   data0, tau, schemeData, minWith, extraargs)
@@ -27,6 +27,12 @@ function [data, tau] = HJIPDE_solve( ...
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
 %   tau  - list of computation times (redundant)
+%   extraOuts - This structure can be used to pass on extra outputs, for
+%               example: 
+%      stoptau - time at which the reachable set contains the initial 
+%                state; tau and data vectors only contains the data till
+%                stoptau time.   
+%
 %
 % Mo Chen, 2016-04-23
 
@@ -43,12 +49,24 @@ if nargin < 5
   extraargs = [];
 end
 
+extraOuts = [];
 small = 1e-4;
 
 %% Extract the information from extraargs
 % Extract the information about obstacles
 if isfield(extraargs, 'obstacles')
   obstacles = extraargs.obstacles;
+end
+
+% Extract the information about plotData
+if isfield(extraargs, 'plotData')
+  % Dimesions to visualize
+  % It will be an array of 1s and 0s with 1s means that dimension should 
+  % be plotted.  
+  plotDims = extraargs.plotData.plotDims;
+  % Points to project other dimensions at. There should be an entry point
+  % corresponding to each 0 in plotDims. 
+  projpt = extraargs.plotData.projpt;
 end
 
 % Extract the information about stopInit
@@ -124,6 +142,53 @@ for i = 2:length(tau)
   % Reshape value function
   % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
   eval(updateData_cmd(g.dim, 'i'));
+  
+  % If commanded, stop the reachable set computation once it contains
+  % the initial state.
+  if isfield(extraargs, 'stopInit')
+      stopflag = checkInclusion(initState, g, y);
+      if stopflag
+          extraOuts.stoptau = tau(i);
+          otherdims = repmat({':'},1,ndims(data)-1);
+          data(otherdims{:}, i+1:end) = [];
+          tau(i+1:end) = [];
+          break;
+      end
+  end
+  
+  % If commanded, visualize the level set.
+  if isfield(extraargs, 'plotData')
+      % Number of dimensions to be plotted and to be projected
+      pDims = size(find(plotDims == 1));
+      projDims = length(projpt);
+      %
+      % Basic Checks
+      if(length(plotDims) ~= g.dim || projDims ~= (g.dim - pDims))
+          error('Mismatch between plot and grid dimesnions!');
+      end
+      
+      if (pDims >= 4 || g.dim > 4)
+          error('Currently only 3D plotting upto 3D is supported!');
+      end
+      %
+      % Visualize the reachable set
+      figure,
+      if projDims == 0
+          hT = visSetIm(g, y);
+      else
+          str = sprintf('%d',[g.dim pDims]) ;
+          switch str
+              case '43'
+                  [g3D, y3D] = proj3D(g, y, 1-plotDims, projpt);
+                  hT = visSetIm(g3D, y3D);
+              case {'42' , '32'}
+                  [g2D, y2D] = proj2D(g, y, 1-plotDims, projpt);
+                  hT = visSetIm(g2D, y2D);
+              otherwise
+                  error('Projection on 1D is not implemented yet!')
+          end
+      end
+  end
   
 end
 
