@@ -33,6 +33,7 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %      .stoptau: time at which the reachable set contains the initial
 %                state; tau and data vectors only contains the data till
 %                stoptau time.
+%      .hT:      figure handle
 %
 % Mo Chen, 2016-04-23
 
@@ -155,12 +156,12 @@ for i = 2:length(tau)
     end
   end
   
-  % If commanded, visualize the level set.
+  %% If commanded, visualize the level set.
   if isfield(extraargs, 'plotData')
     % Number of dimensions to be plotted and to be projected
-    pDims = size(find(plotDims));
+    pDims = nnz(plotDims);
     projDims = length(projpt);
-    %
+    
     % Basic Checks
     if(length(plotDims) ~= g.dim || projDims ~= (g.dim - pDims))
       error('Mismatch between plot and grid dimesnions!');
@@ -169,26 +170,26 @@ for i = 2:length(tau)
     if (pDims >= 4 || g.dim > 4)
       error('Currently only 3D plotting upto 3D is supported!');
     end
-    %
+    
     % Visualize the reachable set
-    figure,
+    figure
     if projDims == 0
-      hT = visSetIm(g, y);
+      extraOuts.hT = visSetIm(g, y);
     else
       str = sprintf('%d',[g.dim pDims]) ;
       switch str
         case '43'
           [g3D, y3D] = proj3D(g, y, 1-plotDims, projpt);
-          hT = visSetIm(g3D, y3D);
+          extraOuts.hT = visSetIm(g3D, y3D);
         case {'42' , '32'}
           [g2D, y2D] = proj2D(g, y, 1-plotDims, projpt);
-          hT = visSetIm(g2D, y2D);
+          extraOuts.hT = visSetIm(g2D, y2D);
         otherwise
           error('Projection on 1D is not implemented yet!')
       end
     end
+    
   end
-  
 end
 
 endTime = cputime;
