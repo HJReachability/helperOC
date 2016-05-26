@@ -31,14 +31,13 @@ end
 
 gNew = processGrid(gNew);
 
+dataNew = [];
 % Truncate everything that's outside of xmin and xmax
 switch gOld.dim
   case 1
     % Data
     if ~isempty(dataOld)
       dataNew = dataOld(gOld.vs{1}>xmin & gOld.vs{1}<xmax);
-    else
-      dataNew = [];
     end
     
   case 2
@@ -46,8 +45,6 @@ switch gOld.dim
     if ~isempty(dataOld)
       dataNew = dataOld(gOld.vs{1}>xmin(1) & gOld.vs{1}<xmax(1), ...
         gOld.vs{2}>xmin(2) & gOld.vs{2}<xmax(2));
-    else
-      dataNew = [];
     end
     
   case 3
@@ -56,8 +53,6 @@ switch gOld.dim
       dataNew = dataOld(gOld.vs{1}>xmin(1) & gOld.vs{1}<xmax(1), ...
         gOld.vs{2}>xmin(2) & gOld.vs{2}<xmax(2), ...
         gOld.vs{3}>xmin(3) & gOld.vs{3}<xmax(3) );
-    else
-      dataNew = [];
     end
     
   case 4
@@ -67,8 +62,6 @@ switch gOld.dim
         gOld.vs{2}>xmin(2) & gOld.vs{2}<xmax(2), ...
         gOld.vs{3}>xmin(3) & gOld.vs{3}<xmax(3), ...
         gOld.vs{4}>xmin(4) & gOld.vs{4}<xmax(4) );
-    else
-      dataNew = [];
     end
     
   otherwise

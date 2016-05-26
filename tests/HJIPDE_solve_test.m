@@ -1,19 +1,21 @@
 function HJIPDE_solve_test(whatTest)
-% HJIPDE_solve_test()
-%
-% Tests the HJIPDE_solve function as well as provide an example of how to
-% use it.
+% HJIPDE_solve_test(whatTest)
+%   Tests the HJIPDE_solve function as well as provide an example of how to
+%   use it.
 %
 % whatTest - Argument that can be used to test a particular feature
-%   'minWith' - Test the minWith functionality
+%   'minWith'   - Test the minWith functionality
 %   'singleObs' - Test with a single static obstacle
-%   'tvObs' - Test with time-verying obstacles
-%   'multiObs' - Test with a single obstacle over different time steps
-%   'stopInit' - Test the functionality of stopping reachable set
-%   computation once it includes the initial state
-%   'plotData' - Test the functionality of plotting reachable sets as they
+%   'tvObs'     - Test with time-verying obstacles
+%   'multiObs'  - Test with a single obstacle over different time steps
+%   'stopInit'  - Test the functionality of stopping reachable set
+%                 computation once it includes the initial state
+%   'plotData'  - Test the functionality of plotting reachable sets as they
 %   are being computed
-% Mo Chen, 2016-04-18
+
+if nargin < 1
+  whatTest = 'minWith';
+end
 
 %% Grid
 grid_min = [-5; -5; -pi]; % Lower corner of computation domain
@@ -38,17 +40,16 @@ tau = t0:dt:tMax;
 
 %% problem parameters
 speed = 1;
-U = [-1 1];
+wMax = 1;
 
 %% Pack problem parameters
 schemeData.grid = g; % Grid MUST be specified!
-schemeData.U = U;
-schemeData.speed = speed;
+schemeData.wMax = wMax;
+schemeData.vrange = speed;
 
 % ----- System dynamics are specified here -----
-addpath ./dubins_liveness_3D
-schemeData.hamFunc = @dubins3DHamFunc;
-schemeData.partialFunc = @dubins3DPartialFunc;
+schemeData.hamFunc = @dubins3Dham;
+schemeData.partialFunc = @dubins3Dpartial;
 
 %% Compute time-dependent value function
 if strcmp(whatTest, 'minWith')
