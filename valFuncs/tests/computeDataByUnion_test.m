@@ -10,7 +10,9 @@ pdDims = 3;               % 3rd diemension is periodic
 g = createGrid(grid_min, grid_max, N, pdDims);
 
 Nfine = [201; 201; 201];
-base_g = createGrid(grid_min, grid_max, Nfine, pdDims);
+grid_min_fine = [-0.6; -0.25; 0]; % Lower corner of computation domain
+grid_max_fine = [0.15; 0.25; 2*pi];    % Upper corner of computation domain
+base_g = createGrid(grid_min_fine, grid_max_fine, Nfine, pdDims);
 
 %% time vector
 dt = 0.01;
@@ -28,9 +30,9 @@ schemeData.grid = g; % Grid MUST be specified!
 schemeData.wMax = U;
 schemeData.vrange = speed;
 schemeData.dMax = dMax;
-schemeData.uMode = 'max';
-schemeData.dMode = 'max';
-schemeData.tMode = 'forward';
+schemeData.uMode = 'min';
+schemeData.dMode = 'min';
+schemeData.tMode = 'backward';
 
 % System dynamics
 schemeData.hamFunc = @dubins3Dham;
@@ -40,11 +42,12 @@ schemeDataFine = schemeData;
 schemeDataFine.grid = base_g;
 %% Initial conditions
 % data0{1} = shapeCylinder(g, 3, [0; 0; 0], 0.5);
-data0{1} = shapeSphere(g, -1 + 2*rand(3,1), 0.5);
+data0{1} = shapeSphere(g, [0; 0; 0], 0.25);
 
 %% Base reachable set
-filename = ['baseFRS_' num2str(schemeData.wMax) ...
-  '_' num2str(max(schemeData.vrange)) '.mat'];
+filename = ['baseRS_' schemeData.tMode '_' num2str(schemeData.wMax) ...
+  '_' num2str(schemeData.vrange(1)) '_' num2str(schemeData.vrange(2)) ...
+  '.mat'];
 
 if exist(filename, 'file')
   load(filename)
@@ -52,18 +55,18 @@ else
   base_data0 = shapeRectangleByCorners(base_g, -g.dx/2, g.dx/2);
   wrap_vector = [0; 0; 2*pi];
   base_data0 = shapeUnion(base_data0, shapeRectangleByCorners(base_g, ...
-    wrap_vector -g.dx/2, wrap_vector + g.dx/2));
+    wrap_vector - g.dx/2, wrap_vector + g.dx/2));
   
   extraArgs.plotData.plotDims = [1, 1, 1];
   extraArgs.plotData.projpt = [];
   
-  base_data = HJIPDE_solve(base_data0, tau, schemeDataFine, 'none', extraArgs);
+  base_data = HJIPDE_solve(base_data0, tau, schemeDataFine, 'zero', extraArgs);
   save(filename, 'base_g', 'base_data', '-v7.3')
 end
 
 for i = 1:length(data0)
   %% Compute reachable set directly
-  dataTrue = HJIPDE_solve(data0{i}, tau, schemeData, 'none');
+  dataTrue = HJIPDE_solve(data0{i}, tau, schemeData, 'zero');
   
   %% Compute reachable set by union
   tic
