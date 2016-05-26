@@ -3,44 +3,61 @@ function computeDataByUnion_test()
 addpath(genpath('..'))
 
 %% Grid
-grid_min = [-5; -5; -pi];
-grid_max = [5; 5; pi];
-N = [35; 35; 35];
-pdDim = 3;
-g = createGrid(grid_min, grid_max, N, pdDim);
+grid_min = [-1; -1; 0]; % Lower corner of computation domain
+grid_max = [1; 1; 2*pi];    % Upper corner of computation domain
+N = [101; 101; 101];         % Number of grid points per dimension
+pdDims = 3;               % 3rd diemension is periodic
+g = createGrid(grid_min, grid_max, N, pdDims);
 
-Nfine = [75; 75; 75];
-base_g = createGrid(grid_min, grid_max, Nfine, pdDim);
+Nfine = [201; 201; 201];
+base_g = createGrid(grid_min, grid_max, Nfine, pdDims);
+
 %% time vector
-dt = 0.025;
-tIAT = 2;
+dt = 0.01;
+tIAT = 0.5;
 tau = 0:dt:tIAT;
 
 %% Problem parameters
-schemeData.wMax = 2;
-schemeData.vrange = [1 1];
-schemeData.grid = g;
+% Vehicle
+speed = [0.5 1];
+U = 1;
+dMax = [0.1 0.2];
+
+%% Pack problem parameters
+schemeData.grid = g; % Grid MUST be specified!
+schemeData.wMax = U;
+schemeData.vrange = speed;
+schemeData.dMax = dMax;
+schemeData.uMode = 'max';
+schemeData.dMode = 'max';
+schemeData.tMode = 'forward';
+
+% System dynamics
 schemeData.hamFunc = @dubins3Dham;
 schemeData.partialFunc = @dubins3Dpartial;
 
 schemeDataFine = schemeData;
 schemeDataFine.grid = base_g;
 %% Initial conditions
-data0{1} = shapeCylinder(g, 3, [0; 0; 0], 0.5);
-data0{2} = shapeSphere(g, -1 + 2*rand(3,1), 0.5);
+% data0{1} = shapeCylinder(g, 3, [0; 0; 0], 0.5);
+data0{1} = shapeSphere(g, -1 + 2*rand(3,1), 0.5);
 
 %% Base reachable set
-filename = ['baseBRS_' num2str(schemeData.wMax) ...
-  '_' num2str(schemeData.vrange(1)) num2str(schemeData.vrange(2)) '.mat'];
+filename = ['baseFRS_' num2str(schemeData.wMax) ...
+  '_' num2str(max(schemeData.vrange)) '.mat'];
 
 if exist(filename, 'file')
   load(filename)
 else
   base_data0 = shapeRectangleByCorners(base_g, -g.dx/2, g.dx/2);
-  extraArgs.plotData.plotDims = ones(1, g.dim);
+  wrap_vector = [0; 0; 2*pi];
+  base_data0 = shapeUnion(base_data0, shapeRectangleByCorners(base_g, ...
+    wrap_vector -g.dx/2, wrap_vector + g.dx/2));
+  
+  extraArgs.plotData.plotDims = [1, 1, 1];
   extraArgs.plotData.projpt = [];
-  base_data = HJIPDE_solve(base_data0, tau, schemeDataFine, 'none', ...
-    extraArgs);
+  
+  base_data = HJIPDE_solve(base_data0, tau, schemeDataFine, 'none', extraArgs);
   save(filename, 'base_g', 'base_data', '-v7.3')
 end
 
