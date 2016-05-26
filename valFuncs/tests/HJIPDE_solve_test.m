@@ -89,13 +89,13 @@ end
 %% Test using single obstacle
 if strcmp(whatTest, 'singleObs')
   obstacles = shapeCylinder(g, 3, [1.5; 1.5; 0], 0.75*R);
-  extraargs.obstacles = obstacles;
+  extraArgs.obstacles = obstacles;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraargs);
+  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraArgs);
   
   % Visualize
   figure;
@@ -117,13 +117,13 @@ if strcmp(whatTest, 'tvObs')
   for i = 1:length(tau)
     obstacles(:,:,:,i) = shapeCylinder(g, 3, [1.5; 1.5; 0], i/length(tau)*R);
   end
-  extraargs.obstacles = obstacles;
+  extraArgs.obstacles = obstacles;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraargs);
+  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraArgs);
   
   % Visualize
   figure;
@@ -143,13 +143,13 @@ end
 if strcmp(whatTest, 'multiObs')
   obstacles = shapeCylinder(g, 3, [1.5; 1.5; 0], 0.75*R);
   tau = linspace(0, 2, 5);
-  extraargs.obstacles = obstacles;
+  extraArgs.obstacles = obstacles;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraargs);
+  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraArgs);
   
   % Visualize
   figure;
@@ -167,14 +167,15 @@ end
 
 %% Test the inclusion of initial state
 if strcmp(whatTest, 'stopInit')
-  extraargs.stopInit.initState = [-1.1, -1.1, 0]';
+  extraArgs.stopInit.initState = [-1.1, -1.1, 0]';
   tau = linspace(0, 2, 5);
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraargs);
+  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'data0', ...
+    extraArgs);
   
   % Visualize
   figure;
@@ -192,15 +193,17 @@ end
 
 %% Test the intermediate plotting
 if strcmp(whatTest, 'plotData')
-  extraargs.plotData.plotDims = [1, 1, 0];
-  extraargs.plotData.projpt = pi/2;
+  extraArgs.visualize = true;
+%   extraArgs.plotData.plotDims = [1, 1, 0];
+%   extraArgs.plotData.projpt = pi/2;
   tau = linspace(0, 2, 5);
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraargs);
+  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'data0', ...
+    extraArgs);
   
   % Visualize
   figure;

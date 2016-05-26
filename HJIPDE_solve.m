@@ -21,6 +21,7 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  stamps tau (obstacles must have same time stamp as the
 %                  solution)
 %     .compRegion: unused for now (meant to limit computation region)
+%     .visualize:  set to true to visualize reachable set
 %     .plotData:   information required to plot the data (need to fill in)
 %     .stopInit:   stop the computation once the reachable set includes the
 %                  initial state
@@ -35,7 +36,6 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                stoptau time.
 %      .hT:      figure handle
 %
-% Mo Chen, 2016-04-23
 
 %% Default parameters
 if numel(tau) < 2
@@ -59,17 +59,24 @@ if isfield(extraArgs, 'obstacles')
   obstacles = extraArgs.obstacles;
 end
 
-% Extract the information about plotData
-if isfield(extraArgs, 'plotData')
-  % Dimensions to visualize
-  % It will be an array of 1s and 0s with 1s means that dimension should
-  % be plotted.
-  plotDims = extraArgs.plotData.plotDims;
-  % Points to project other dimensions at. There should be an entry point
-  % corresponding to each 0 in plotDims.
-  projpt = extraArgs.plotData.projpt;
-  % Initialize the figure for visualization
+if isfield(extraArgs, 'visualize') && extraArgs.visualize
+  % Extract the information about plotData
+  if isfield(extraArgs, 'plotData')
+    % Dimensions to visualize
+    % It will be an array of 1s and 0s with 1s means that dimension should
+    % be plotted.
+    plotDims = extraArgs.plotData.plotDims;
+    % Points to project other dimensions at. There should be an entry point
+    % corresponding to each 0 in plotDims.
+    projpt = extraArgs.plotData.projpt;
+    % Initialize the figure for visualization
+  else
+    plotDims = ones(schemeData.grid.dim, 1);
+    projpt = [];
+  end
+  
   f = figure;
+  need_light = true;
 end
 
 % Extract the information about stopInit
@@ -163,7 +170,7 @@ for i = 2:length(tau)
   end
   
   %% If commanded, visualize the level set.
-  if isfield(extraArgs, 'plotData')
+  if isfield(extraArgs, 'visualize') && extraArgs.visualize
     % Number of dimensions to be plotted and to be projected
     pDims = nnz(plotDims);
     projDims = length(projpt);
@@ -180,14 +187,26 @@ for i = 2:length(tau)
     % Visualize the reachable set
     figure(f)
     reachSet = eval(get_dataStr(g.dim, 'i'));
+    
     if projDims == 0
-      extraOuts.hT = visSetIm(g, reachSet);
+      extraOuts.hT = visSetIm(g, reachSet, 'r', 0, [], false);
+      
+      if need_light && g.dim == 3
+        camlight left
+        camlight right
+        need_light = false;
+      end
     else
       str = sprintf('%d',[g.dim pDims]) ;
       switch str
         case '43'
           [g3D, y3D] = proj3D(g, reachSet, 1-plotDims, projpt);
-          extraOuts.hT = visSetIm(g3D, y3D);
+          extraOuts.hT = visSetIm(g3D, y3D, 'r', 0, [], false);
+          if need_light
+            camlight left
+            camlight right
+            need_light = false;
+          end
         case {'42' , '32'}
           [g2D, y2D] = proj2D(g, reachSet, 1-plotDims, projpt);
           extraOuts.hT = visSetIm(g2D, y2D);
