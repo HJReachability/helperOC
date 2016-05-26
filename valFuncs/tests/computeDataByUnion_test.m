@@ -1,6 +1,5 @@
 function computeDataByUnion_test()
 % Tests the computeDataByUnion function
-addpath(genpath('..'))
 
 %% Grid
 grid_min = [-1; -1; 0]; % Lower corner of computation domain
