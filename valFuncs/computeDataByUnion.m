@@ -1,24 +1,30 @@
-function data = computeDataByUnion(bg, bdata, g, target, pdims, adim)
-% data = computeDataByUnion(bg, bdata, g, target, pdims, adim)
+function data = computeDataByUnion(g, base_data, target, pdims, adim)
+% data = computeDataByUnion(g, base_data, target, pdims, adim)
 %   Computes the reachable set using by taking unions of a base reachable
 %   translated and rotated according to the states in the target set
 %
-% 
+% Inputs:
+%   g         - grid structure
+%   base_data - base reachable set represented on the grid g
+%                 (migrate to the common grid before calling this function!)
+%   target    - target set value function
+%   pdims     - dimensions that represent position
+%   adim      - dimension that represents heading
 %
-% Mo Chen, 2016-05-18
+% Output:
+%   data      - value function representing reachable set
+%
+% See computeDataByUnion_test
 
 % Default position dimensions
-if nargin < 6
+if nargin < 4
   pdims = [1 2];
 end
 
 % Default angle dimension
-if nargin < 6
+if nargin < 5
   adim = 3;
 end
-
-% Transfer base data to the same grid as the target set
-bdata = migrateGrid(bg, bdata, g);
 
 % Get indices of points inside target
 in_target = find(target<0);
@@ -35,7 +41,7 @@ end
 % Take the union of base reachable sets that are shifted and rotated
 data = inf(g.shape);
 for i = 1:length(in_target)
-  data_rot = rotateData(g, bdata, thetas(i), pdims, adim);
+  data_rot = rotateData(g, base_data, thetas(i), pdims, adim);
   data_rot_shift = shiftData(g, data_rot, shifts(i,:), pdims);
   data = min(data, data_rot_shift);
 end
