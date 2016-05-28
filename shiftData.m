@@ -1,8 +1,12 @@
-function dataOut = shiftData(g, dataIn, shift, pdims)
+function dataOut = shiftData(g, dataIn, shift, pdims, interp_method)
 
 % Default position dimensions
 if nargin < 4
   pdims = [1 2];
+end
+
+if nargin < 5
+  interp_method = 'linear';
 end
 
 rxs = g.xs;
@@ -14,7 +18,8 @@ for i = 1:length(shift)
 end
 
 %% Interpolate dataIn to get approximation of rotated data
-dataOut = eval_u(g, dataIn, [rxs{1}(:) rxs{2}(:) rxs{3}(:)]);
+dataOut = ...
+  eval_u(g, dataIn, [rxs{1}(:) rxs{2}(:) rxs{3}(:)], interp_method);
 dataOut = reshape(dataOut, g.shape);
 
 end

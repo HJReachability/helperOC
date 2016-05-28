@@ -1,4 +1,4 @@
-function dataOut = rotateData(g, dataIn, theta, pdims, adim)
+function dataOut = rotateData(g, dataIn, theta, pdims, adim, interp_method)
 % Rotates about origin
 % The grid structure g is common to dataIn and dataOut
 
@@ -10,6 +10,10 @@ end
 % Default angle dimension
 if nargin < 5
   adim = 3;
+end
+
+if nargin < 6
+  interp_method = 'linear';
 end
 
 rxs = g.xs;
@@ -34,6 +38,7 @@ if ~isempty(adim)
 end
 
 %% Interpolate dataIn to get approximation of rotated data
-dataOut = eval_u(g, dataIn, [rxs{1}(:) rxs{2}(:) rxs{3}(:)]);
+dataOut = ...
+  eval_u(g, dataIn, [rxs{1}(:) rxs{2}(:) rxs{3}(:)], interp_method);
 dataOut = reshape(dataOut, g.shape);
 end

@@ -1,4 +1,4 @@
-function v = eval_u(gs, datas, xs)
+function v = eval_u(gs, datas, xs, interp_method)
 % v = eval_u(g, datas, x)
 %   Computes the interpolated value of the value functions datas at the
 %   states xs
@@ -24,22 +24,26 @@ function v = eval_u(gs, datas, xs)
 %
 % Mo Chen, 2016-05-18
 
+if nargin < 4
+  interp_method = 'linear';
+end
+
 if isstruct(gs) && isnumeric(datas) && ismatrix(xs)
   % Option 1
-  v = eval_u_single(gs, datas, xs);
+  v = eval_u_single(gs, datas, xs, interp_method);
   
 elseif isstruct(gs) && iscell(datas) && isvector(xs)
   % Option 2
   v = zeros(length(datas), 1);
   for i = 1:length(datas)
-    v(i) = eval_u_single(gs, datas{i}, xs);
+    v(i) = eval_u_single(gs, datas{i}, xs, interp_method);
   end
   
 elseif iscell(gs) && iscell(datas) && iscell(xs)
   % Option 3
   v = zeros(length(gs), 1);
   for i = 1:length(gs)
-    v(i) = eval_u_single(gs{i}, datas{i}, xs{i});
+    v(i) = eval_u_single(gs{i}, datas{i}, xs{i}, interp_method);
   end
   
 else
@@ -47,7 +51,7 @@ else
 end
 end
 
-function v = eval_u_single(g, data, x)
+function v = eval_u_single(g, data, x, interp_method)
 % v = eval_u_single(g, data, x)
 %   Computes the interpolated value of a value function data at state x
 %
@@ -79,21 +83,22 @@ x = checkInterpInput(g, x);
 
 switch g.dim
   case 1
-    v = interpn(g.vs{1}, data, x);
+    v = interpn(g.vs{1}, data, x, interp_method);
     
   case 2
-    v = interpn(g.vs{1}, g.vs{2}, data, x(:,1),x(:,2));
+    v = interpn(g.vs{1}, g.vs{2}, data, x(:,1),x(:,2), interp_method);
     
   case 3
-    v = interpn(g.vs{1}, g.vs{2}, g.vs{3}, data, x(:,1),x(:,2),x(:,3));
+    v = interpn(g.vs{1}, g.vs{2}, g.vs{3}, data, x(:,1),x(:,2),x(:,3), ...
+      interp_method);
     
   case 4
     v = interpn(g.vs{1},g.vs{2},g.vs{3}, g.vs{4}, data, ...
-      x(:,1),x(:,2),x(:,3),x(:,4));
+      x(:,1),x(:,2),x(:,3),x(:,4), interp_method);
     
   case 6
     v = interpn(g.vs{1}, g.vs{2},g.vs{3}, g.vs{4}, g.vs{5}, g.vs{6}, ...
-      data, x(:,1), x(:,2), x(:,3), x(:,4), x(:,5), x(:,6));
+      data, x(:,1), x(:,2), x(:,3), x(:,4), x(:,5), x(:,6), interp_method);
     
   otherwise
     error(['Cannot evaluate matrices with dimension' num2str(g.dim) '!'])
