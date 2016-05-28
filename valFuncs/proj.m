@@ -1,5 +1,30 @@
 function [gOut, dataOut] = proj(g, data, dims, xs, NOut)
+% [gOut, dataOut] = proj(g, data, dims, xs, NOut)
+%   Projects data corresponding to the grid g in g.dim dimensions, removing
+%   dimensions specified in dims. If a point is specified, a slice of the
+%   full-dimensional data at the point xs is taken.
+%
+% Inputs:
+%   g       - grid corresponding to input data
+%   data    - input data
+%   dims    - vector of length g.dim specifying dimensions to project
+%                 For example, if g.dim = 4, then dims = [0 0 1 1] would
+%                 project the last two dimensions
+%   xs      - Type of projection (defaults to 'min')
+%       'min':    takes the union across the projected dimensions
+%       'max':    takes the intersection across the projected dimensions
+%       a vector: takes a slice of the data at the point xs
+%   NOut    - number of grid points in output grid (defaults to the same
+%             number of grid points of the original grid in the unprojected
+%             dimensions)
+%
+% Outputs:
+%   gOut    - grid corresponding to projected data
+%   dataOut - projected data
+%
+% See proj_test.m
 
+%% Input checking
 if length(dims) ~= g.dim
   error('Dimensions are inconsistent!')
 end
@@ -11,10 +36,13 @@ if nnz(~dims) == g.dim
   return
 end
 
+% By default, do a projection
 if nargin < 4
   xs = 'min';
 end
 
+% If a slice is requested, make sure the specified point has the correct
+% dimension
 if isnumeric(xs) && length(xs) ~= nnz(dims)
   error('Dimension of xs and dims do not match!')
 end
@@ -23,9 +51,8 @@ if nargin < 5
   NOut = g.N(~dims);
 end
 
-dims = logical(dims);
-
 % Create ouptut grid by keeping dimensions that we are not collapsing
+dims = logical(dims);
 gOut.dim = nnz(~dims);
 gOut.min = g.min(~dims);
 gOut.max = g.max(~dims);
@@ -44,13 +71,32 @@ if nargout < 2
   return
 end
 
+% 'min' or 'max'
+if ischar(xs)
+  dimsToProj = find(dims);
+  
+  for i = length(dimsToProj):-1:1
+    if strcmp(xs,'min')
+      data = squeeze(min(data, [], dimsToProj(i)));
+    elseif strcmp(xs,'max')
+      data = squeeze(max(data, [], dimsToProj(i)));
+    else
+      error('xs must be a vector, ''min'', or ''max''!')
+    end
+  end
+  
+  dataOut = data;
+  return
+end
+
+% Take a slice
 temp = eval(getCmdStr_projData(g.dim, dims));
 dataOut = squeeze(temp);
 dataOut = eval(getCmdStr_matchGrid(g.dim, dims));
 end
 
 function cmdStr = getCmdStr_projData(totalDim, dims)
-% For example, if totalDim = 4, dims = [0 1 0 1], returns the string 
+% For example, if totalDim = 4, dims = [0 1 0 1], returns the string
 % interpn(g.vs{1}, g.vs{2}, g.vs{3}, g.vs{4}, data, g.vs{1}, xs(1), ...
 %   g.vs{3}, xs(2));
 
@@ -60,10 +106,10 @@ cmdStr = 'interpn(';
 for i = 1:totalDim
   cmdStr = cat(2, cmdStr, ['g.vs{' num2str(i) '}, ']);
 end
-% interpn(g.vs{1}, g.vs{2}, g.vs{3}, g.vs{4}, 
+% interpn(g.vs{1}, g.vs{2}, g.vs{3}, g.vs{4},
 
 cmdStr = cat(2, cmdStr, 'data, ');
-% interpn(g.vs{1}, g.vs{2}, g.vs{3}, g.vs{4}, data, 
+% interpn(g.vs{1}, g.vs{2}, g.vs{3}, g.vs{4}, data,
 
 xsDim = 1;
 for i = 1:totalDim
@@ -97,10 +143,10 @@ for i = 1:totalDim
     cmdStr = cat(2, cmdStr, ['g.vs{' num2str(i) '}, ']);
   end
 end
-% interpn(g.vs{1}, g.vs{3}, 
+% interpn(g.vs{1}, g.vs{3},
 
 cmdStr = cat(2, cmdStr, 'dataOut, ');
-% interpn(g.vs{1}, g.vs{3}, dataOut, 
+% interpn(g.vs{1}, g.vs{3}, dataOut,
 
 for i = 1:nnz(~dims)
   cmdStr = cat(2, cmdStr, ['gOut.xs{' num2str(i) '}']);

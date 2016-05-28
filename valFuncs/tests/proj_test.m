@@ -1,36 +1,146 @@
-function proj_test()
-totalDims = [3 4];
-Ns = [9 9];
+function proj_test(whatTest)
+% proj_test(whatTest)
+%   tests the proj() function
 
-R = 0.75;
-for i = 1:length(totalDims)
-  g = createGrid(-ones(totalDims(i),1), ones(totalDims(i),1), ...
-    25*ones(totalDims(i),1));
-  data = shapeSphere(g, [0;0;0], R);
-  
-  figure
-  spC = ceil(sqrt(Ns(i)));
-  spR = ceil(Ns(i)/spC);
-  for j = 1:Ns(i)
+if nargin < 1
+  whatTest = 'projTo1-3D';
+end
+
+switch whatTest
+  case 'projTo1-3D'
+    %% Project down to 1 to 3 dimensions
+    totalDims = 2:6; % Dimensions to test
     
+    % Number of trials for each dimension
+    numTrialsPerDim = 9*ones(size(totalDims));
+    Ns = [101, 51, 25, 15, 11];
     
-    xs = -R + 2*R*rand(1, nnz(dims));
-    [gOut, dataOut] = proj(g, data, dims, xs);
+    R = 0.75; % Radius of hypersphere for testing
     
-    subplot(spR, spC, j)
-    visSetIm(gOut, dataOut);
-    title(['totalDims: ' num2str(totalDims(i)) ', [' num2str(xs) '] slice'])
-  end
+    for i = 1:length(totalDims)
+      g = createGrid(-ones(totalDims(i),1), ones(totalDims(i),1), ...
+        Ns(i)*ones(totalDims(i),1));
+      data = shapeSphere(g, zeros(g.dim, 1), R);
+      
+      figure
+      spC = ceil(sqrt(numTrialsPerDim(i)));
+      spR = ceil(numTrialsPerDim(i)/spC);
+      for j = 1:numTrialsPerDim(i)
+        % Which dimensions to project?
+        dims = randProj123Dims(totalDims(i));
+        
+        xs = -0.5*R + R*rand(1, nnz(dims));
+        [gOut, dataOut] = proj(g, data, dims, xs);
+        
+        subplot(spR, spC, j)
+        visSetIm(gOut, dataOut);
+        title(['totalDims: ' num2str(totalDims(i)) ', [' num2str(xs) '] slice'])
+      end
+    end
+    
+  case 'projTo4D'
+    %% Project down to 4 dimensions
+    totalDims = 4:6;
+    numTrialsPerDim = 4*ones(size(totalDims));
+    Ns = [25, 15, 11];
+    R = 0.75; % Radius of hypersphere for testing
+    
+    for i = 1:length(totalDims)
+      g = createGrid(-ones(totalDims(i),1), ones(totalDims(i),1), ...
+        Ns(i)*ones(totalDims(i),1));
+      data = shapeSphere(g, zeros(g.dim, 1), R);
+      
+      for j = 1:numTrialsPerDim(i)
+        % Which dimensions to project?
+        dims = randProjDims(totalDims(i), 4);
+        
+        xs = -0.5*R + R*rand(1, nnz(dims));
+        [gOut, dataOut] = proj(g, data, dims, xs);
+        
+        figure
+        visSetIm(gOut, dataOut);
+        title(['totalDims: ' num2str(totalDims(i)) ', [' num2str(xs) '] slice'])
+      end
+    end
+    
+  case 'min_and_max'
+    %% Project down to 1 to 3 dimensions
+    totalDims = 2:6; % Dimensions to test
+    
+    % Number of trials for each dimension
+    numTrialsPerDim = 9*ones(size(totalDims));
+    Ns = [101, 51, 25, 15, 11];
+    
+    R = 0.75; % Radius of hypersphere for testing
+    
+    for i = 1:length(totalDims)
+      g = createGrid(-ones(totalDims(i),1), ones(totalDims(i),1), ...
+        Ns(i)*ones(totalDims(i),1));
+      data = shapeSphere(g, zeros(g.dim, 1), R);
+      
+      figure
+      spC = ceil(sqrt(numTrialsPerDim(i)));
+      spR = ceil(numTrialsPerDim(i)/spC);
+      for j = 1:numTrialsPerDim(i)
+        % Which dimensions to project?
+        dims = randProj123Dims(totalDims(i));
+        
+        if rand < 0.5
+          xs = 'min';
+        else
+          xs = 'max';
+        end
+        
+        [gOut, dataOut] = proj(g, data, dims, xs);
+        
+        subplot(spR, spC, j)
+        visSetIm(gOut, dataOut);
+        title(['totalDims: ' num2str(totalDims(i)) ...
+          ', dims = [' num2str(dims) '], ' xs])
+      end
+    end
+  otherwise
+    error('Unknown test!')
 end
 end
 
-function dims = randProjDims(totalDim)
-dimKept = randi(totalDim); % Do not project this dimension
-dims = false(1, totalDim);
-for k = 1:totalDim
+function dims = randProj123Dims(totalDim)
+% dims = randProjDims(totalDim)
+%   Randomly determines which dimensions to project and which ones to keep.
+%   Between 1 and 3 dimensions will be kept
+
+% Project down to at most 3 dimensions
+dims = randProjDims(totalDim, 3);
+
+% For the remaining dimensions, randomly choose which ones to project
+avail_dims = find(~dims);
+for i = 1:length(avail_dims)
   % 50 percent chance to project each dimension except dimKept
-  if k ~= dimKept && rand < 0.5
-    dims(k) = true;
+  if rand < 0.5
+    dims(avail_dims(i)) = true;
   end
 end
+
+% Make sure at least one dimension is kept
+if all(dims)
+  dims(randi(totalDim)) = false;
+end
+
+end
+
+function dims = randProjDims(totalDim, dimsRemaining)
+% Project down to at 4 dimensions
+
+% Determine how many dimensions need to be projected
+min_dims_proj = totalDim - dimsRemaining;
+
+% Project the required number of dimensions down, each time randomly
+% picking a dimension from the remaining available dimensions to project
+dims = false(1, totalDim);
+for i = 1:min_dims_proj
+  avail_dims = find(~dims);
+  idimProj = randi(length(avail_dims));
+  dims(avail_dims(idimProj)) = true;
+end
+
 end
