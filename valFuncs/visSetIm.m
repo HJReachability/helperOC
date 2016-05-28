@@ -42,6 +42,11 @@ end
 
 %% Displays level set depending on dimension of grid and data
 switch g.dim
+  case 1
+    h = plot(g.xs{1}, data, '-', 'color', color);
+    hold on
+    plot(g.xs{1}, zeros(size(g.xs{1})), 'k:')
+    
   case 2
     [~, h] = contour(g.xs{1}, g.xs{2}, data, [level level], 'color', color);
     
@@ -94,7 +99,7 @@ for i = 1:N
   
   dim = zeros(1, 4);
   dim(sliceDim) = 1;
-  [g3D, data3D] = proj3D(g, data, dim, xs);
+  [g3D, data3D] = proj(g, data, dim, xs);
   
   % Visualize 3D slices
   h{i} = visSetIm3D(g3D, data3D, color, level, applyLight);
