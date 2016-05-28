@@ -1,15 +1,27 @@
-function data = computeDataByUnion(g, base_data, target, pdims, adim)
-% data = computeDataByUnion(g, base_data, target, pdims, adim)
-%   Computes the reachable set using by taking unions of a base reachable
-%   translated and rotated according to the states in the target set
+function data = ...
+  computeDataByUnion(g, data0, base_g, base_data, pdims, adim, bdry_only)
+% data = ...
+%   computeDataByUnion(base_g, base_data, g, data0, pdims, adim, bdry_only)
+%       Computes the reachable set using by taking unions of a base
+%       reachable translated and rotated according to the states in the 
+%       target set
 %
 % Inputs:
-%   g         - grid structure
+%   g         - grid structure corresponding to target set
+%   data0     - target set (initial condition)
+%                   The union will be taken over the set of points at which
+%                   data0 is negative; shifts and rotations are determined
+%                   by the corresponding indices in g.xs
+%   base_g    - base grid structure
 %   base_data - base reachable set represented on the grid g
-%                 (migrate to the common grid before calling this function!)
-%   target    - target set value function
+%                   For better computation speed, migrate base_g and
+%                   base_data to a coarser grid before calling this 
+%                   function
 %   pdims     - dimensions that represent position
 %   adim      - dimension that represents heading
+%   bdry_only - set to true to take the union only over boundary points
+%                   If true, remember to take union of data and the
+%                   full-dimensional initial condition
 %
 % Output:
 %   data      - value function representing reachable set
@@ -26,24 +38,39 @@ if nargin < 5
   adim = 3;
 end
 
+if nargin < 6
+  bdry_only = true;
+end
+
 % Get indices of points inside target
-in_target = find(target<0);
+if bdry_only
+  near_and_in = find(bwperim(data0<0));
+else
+  near_and_in = find(data0<0);
+end
+
+disp([num2str(nnz(near_and_in)) ' out of ' num2str(nnz(data0<0)) ...
+  ' grid points near the interface'])
 
 % Get the list of shifts and rotations
-shifts_x = g.xs{pdims(1)}(in_target);
-shifts_y = g.xs{pdims(2)}(in_target);
+shifts_x = g.xs{pdims(1)}(near_and_in);
+shifts_y = g.xs{pdims(2)}(near_and_in);
 shifts = [shifts_x shifts_y];
 
 if ~isempty(adim)
-  thetas = g.xs{adim}(in_target);
+  thetas = g.xs{adim}(near_and_in);
 end
 
 % Take the union of base reachable sets that are shifted and rotated
 data = inf(g.shape);
-for i = 1:length(in_target)
-  data_rot = rotateData(g, base_data, thetas(i), pdims, adim);
-  data_rot_shift = shiftData(g, data_rot, shifts(i,:), pdims);
+for i = 1:length(near_and_in)
+  if ~isempty(adim)
+    data_rot = rotateData(base_g, base_data, thetas(i), pdims, adim);
+  else
+    data_rot = base_data;
+  end
+  
+  data_rot_shift = shiftData(base_g, data_rot, shifts(i,:), pdims);
   data = min(data, data_rot_shift);
 end
-
 end
