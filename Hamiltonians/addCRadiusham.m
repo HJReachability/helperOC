@@ -19,7 +19,7 @@ R = schemeData.velocity;
 hamValue = 0;
 
 for i = 1:length(deriv)
-  hamValue = hamValue + R*deriv{i}.^2;
+  hamValue = hamValue + R^2*deriv{i}.^2;
 end
 
 hamValue = sqrt(hamValue);
