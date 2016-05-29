@@ -1,5 +1,5 @@
-function P = extractCostates(grid, data, derivFunc, upWind)
-% function p = extractCostates(grid, data, upWind)
+function P = extractCostates(g, data, derivFunc, upWind)
+% function P = extractCostates(g, data, derivFunc, upWind)
 %
 % Estimates the costate p at position x for cost function data on grid g by
 % numerically taking partial derivatives along each grid direction.
@@ -11,7 +11,7 @@ function P = extractCostates(grid, data, derivFunc, upWind)
 %                     toolbox)
 %         upWind    - whether to use upwinding
 %
-% Output: p         - gradient in a g.dim by 1 vector
+% Output: P         - gradient in a g.dim by 1 vector
 %
 % Mo Chen, 2015-10-15
 % Originally adapted from Haomiao Huang's code
@@ -30,18 +30,51 @@ numInfty = 1e6;
 data(isnan(data)) = numInfty;
 
 % Go through each dimension and compute the gradient in each
-P = cell(grid.dim,1);
-for i = 1:grid.dim
-  [derivL, derivR] = derivFunc(grid, data, i);
+P = cell(g.dim,1);
+
+if numDims(data) == g.dim
+  tau_length = 1;
+elseif numDims(data) == g.dim + 1
+  tau_length = size(data);
+  tau_length = tau_length(end);
+  colons = repmat({':'}, 1, g.dim);
+else
+  error('Dimensions of input data and grid don''t match!')
+end
+
+for i = 1:g.dim
+  P{i} = zeros(size(data));
   
-  if upWind
-    P{i} = derivL.*(derivL>0 & derivR>0) + ...
-      derivR.*(derivL<0 & derivR<0) + ...
-      derivL.*(derivL>0 & derivR<0 & -derivL<=derivR) + ...
-      derivR.*(derivL>0 & derivR<0 & -derivL>derivR);
-  else
-    P{i} = (derivL + derivR)/2;
+  %% data at a single time stamp
+  if tau_length == 1
+    [derivL, derivR] = derivFunc(g, data, i);
+    
+    if upWind
+      P{i} = derivL.*(derivL>0 & derivR>0) + ...
+        derivR.*(derivL<0 & derivR<0) + ...
+        derivL.*(derivL>0 & derivR<0 & -derivL<=derivR) + ...
+        derivR.*(derivL>0 & derivR<0 & -derivL>derivR);
+    else
+      P{i} = (derivL + derivR)/2;
+    end
+    
+    continue
   end
+  
+  %% data at multiple time stamps
+  for t = 1:tau_length
+    [derivL, derivR] = derivFunc(g, data(colons{:}, t), i);
+    
+    if upWind
+      P{i}(colons{:}, t) = derivL.*(derivL>0 & derivR>0) + ...
+        derivR.*(derivL<0 & derivR<0) + ...
+        derivL.*(derivL>0 & derivR<0 & -derivL<=derivR) + ...
+        derivR.*(derivL>0 & derivR<0 & -derivL>derivR);
+    else
+      P{i}(colons{:}, t) = (derivL + derivR)/2;
+    end
+  end
+  
 end
 
 end

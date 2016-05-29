@@ -52,6 +52,7 @@ end
 
 extraOuts = [];
 small = 1e-4;
+colons = repmat({':'}, 1, schemeData.grid.dim);
 
 %% Extract the information from extraargs
 % Extract the information about obstacles
@@ -86,7 +87,6 @@ end
 
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
-g = schemeData.grid;
 % Extract accuracy parameter o/w set default accuracy
 accuracy = 'veryHigh';
 if isfield(schemeData, 'accuracy')
@@ -104,16 +104,18 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
 
 startTime = cputime;
 
-if g.dim == 1
+if schemeData.grid.dim == 1
   data = zeros(length(data0), length(tau));
 else
   data = zeros([size(data0) length(tau)]);
 end
 
-eval(updateData_cmd(g.dim, '1'));
+data(colons{:}, 1) = data0;
+% eval(updateData_cmd(g.dim, '1'));
 
 for i = 2:length(tau)
-  y0 = eval(get_dataStr(g.dim, 'i-1'));
+  %   y0 = eval(get_dataStr(g.dim, 'i-1'));
+  y0 = data(colons{:}, i-1);
   y = y0(:);
   
   tNow = tau(i-1);
@@ -138,11 +140,12 @@ for i = 2:length(tau)
     
     % "Mask" using obstacles
     if isfield(extraArgs, 'obstacles')
-      if numDims(obstacles) == g.dim
+      if numDims(obstacles) == schemeData.grid.dim
         y = max(y, -obstacles(:));
       else
         % obstacle = obstacles(:,:,:,i)
-        obstacle_i = eval(get_dataStr(g.dim, 'i', 'obstacles'));
+        %         obstacle_i = eval(get_dataStr(g.dim, 'i', 'obstacles'));
+        obstacle_i = obstacles(colons{:}, i);
         y = max(y, -obstacle_i(:));
       end
     end
@@ -150,7 +153,8 @@ for i = 2:length(tau)
   
   % Reshape value function
   % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
-  eval(updateData_cmd(g.dim, 'i'));
+  data(colons{:}, i) = reshape(y, schemeData.grid.shape);
+  %   eval(updateData_cmd(g.dim, 'i'));
   
   % If commanded, stop the reachable set computation once it contains
   % the initial state.
@@ -158,12 +162,12 @@ for i = 2:length(tau)
     if iscolumn(initState)
       initState = initState';
     end
-    reachSet = eval(get_dataStr(g.dim, 'i'));
-    initValue = eval_u(g, reachSet, initState);
+    %     reachSet = eval(get_dataStr(g.dim, 'i'));
+    %     initValue = eval_u(g, reachSet, initState);
+    initValue = eval_u(schemeData.grid, data(colons{:}, i), initState);
     if ~isnan(initValue) && initValue <= 0
       extraOuts.stoptau = tau(i);
-      otherdims = repmat({':'},1,g.dim);
-      data(otherdims{:}, i+1:size(data,g.dim+1)) = [];
+      data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
       tau(i+1:end) = [];
       break
     end
@@ -176,67 +180,46 @@ for i = 2:length(tau)
     projDims = length(projpt);
     
     % Basic Checks
-    if(length(plotDims) ~= g.dim || projDims ~= (g.dim - pDims))
+    if(length(plotDims) ~= schemeData.grid.dim || ...
+        projDims ~= (schemeData.grid.dim - pDims))
       error('Mismatch between plot and grid dimesnions!');
     end
     
-    if (pDims >= 4 || g.dim > 4)
+    if (pDims >= 4 || schemeData.grid.dim > 4)
       error('Currently only 3D plotting upto 3D is supported!');
     end
     
     % Visualize the reachable set
     figure(f)
-    reachSet = eval(get_dataStr(g.dim, 'i'));
     
     if projDims == 0
-      extraOuts.hT = visSetIm(g, reachSet, 'r', 0, [], false);
+      extraOuts.hT = visSetIm(schemeData.grid, data(colons{:}, i), ...
+        'r', 0, [], false);
       
-      if need_light && g.dim == 3
+      if need_light && schemeData.grid.dim == 3
         camlight left
         camlight right
         need_light = false;
       end
     else
-      str = sprintf('%d',[g.dim pDims]) ;
-      switch str
-        case '43'
-          [g3D, y3D] = proj3D(g, reachSet, 1-plotDims, projpt);
-          extraOuts.hT = visSetIm(g3D, y3D, 'r', 0, [], false);
-          if need_light
-            camlight left
-            camlight right
-            need_light = false;
-          end
-        case {'42' , '32'}
-          [g2D, y2D] = proj2D(g, reachSet, 1-plotDims, projpt);
-          extraOuts.hT = visSetIm(g2D, y2D);
-        otherwise
-          error('Projection on 1D is not implemented yet!')
+      [gProj, dataProj] = proj(schemeData.grid, data(colons{:}, i), ...
+        1-plotDims, projpt);
+      extraOuts.hT = visSetIm(gProj, dataProj, 'r', 0, [], false);
+      
+      if need_light && gProj.dim == 3
+        camlight left
+        camlight right
+        need_light = false;
       end
+      
     end
+    
     drawnow;
   end
 end
 
 endTime = cputime;
 fprintf('Total execution time %g seconds\n', endTime - startTime);
-end
-
-function cmdStr = updateData_cmd(dims, indStr)
-%% Generate command for updating data
-% data(:,:,:,i)
-cmdStr = get_dataStr(dims, indStr);
-
-% data(:,:,:,i) =
-cmdStr = cat(2, cmdStr, ' = ');
-
-if strcmp(indStr, '1')
-  % data(:,:,:,i) = data0;
-  cmdStr = cat(2, cmdStr, 'data0;');
-else
-  % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
-  cmdStr = cat(2, cmdStr, 'reshape(y, schemeData.grid.shape);');
-end
 end
 
 function [dissFunc, integratorFunc, derivFunc] = ...
