@@ -7,7 +7,7 @@ function HJIPDE_solve_test(whatTest)
 %   'minWith'   - Test the minWith functionality
 %   'singleObs' - Test with a single static obstacle
 %   'tvObs'     - Test with time-verying obstacles
-%   'singleObs_sparse_tau'  - single obstacle over a few time steps
+%   'obs_stau'  - single obstacle over a few time steps
 %   'stopInit'  - Test the functionality of stopping reachable set
 %                 computation once it includes the initial state
 %   'plotData'  - Test the functionality of plotting reachable sets as they
@@ -140,7 +140,7 @@ if strcmp(whatTest, 'tvObs')
 end
 
 %% Test using single obstacle but few time steps
-if strcmp(whatTest, 'singleObs_sparse_tau')
+if strcmp(whatTest, 'obs_stau')
   obstacles = shapeCylinder(g, 3, [1.5; 1.5; 0], 0.75*R);
   tau = linspace(0, 2, 5);
   extraArgs.obstacles = obstacles;
