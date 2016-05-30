@@ -1,32 +1,5 @@
 function hamValue = dblInt_ham(t, data, deriv, schemeData)
-% air3DHamFunc: analytic Hamiltonian for 3D collision avoidance example.
-%
-% hamValue = air3DHamFunc(t, data, deriv, schemeData)
-%
-% This function implements the hamFunc prototype for the three dimensional
-%   aircraft collision avoidance example (also called the game of
-%   two identical vehicles).
-%
-% It calculates the analytic Hamiltonian for such a flow field.
-%
-% Parameters:
-%   t            Time at beginning of timestep (ignored).
-%   data         Data array.
-%   deriv	 Cell vector of the costate (\grad \phi).
-%   schemeData	 A structure (see below).
-%
-%   hamValue	 The analytic hamiltonian.
-%
-% schemeData is a structure containing data specific to this Hamiltonian
-%   For this function it contains the field(s):
-%
-%   .grid	 Grid structure.
-%   .velocityA	 Speed of the evader (positive constant).
-%   .velocityB	 Speed of the pursuer (positive constant).
-%   .inputA	 Maximum turn rate of the evader (positive).
-%   .inputB	 Maximum turn rate of the pursuer (positive).
-%
-% Ian Mitchell 3/26/04
+% hamValue = dblInt_ham(t, data, deriv, schemeData)
 
 checkStructureFields(schemeData, 'grid', 'uMax');
 

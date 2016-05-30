@@ -13,7 +13,7 @@ function h = visSetMIE(g, data, color, sliceDim)
 
 %% Default parameters
 if nargin < 3
-  color = 'b';
+  color = 'r';
 end
 
 if nargin < 4

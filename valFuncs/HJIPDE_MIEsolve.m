@@ -1,5 +1,5 @@
-function [data, tau, extraOuts] = HJIPDE_solve( ...
-  data0, tau, schemeData, minWith, extraArgs)
+function [datal, datau, tau, extraOuts] = HJIPDE_MIEsolve( ...
+  data0l, data0u, tau, schemeData, minWith, extraArgs)
 % [data, tau] = HJIPDE_solve( ...
 %   data0, tau, schemeData, minWith, extraargs)
 %
@@ -13,14 +13,11 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  .grid: grid (required!)
 %   minWith    - set to 'zero' to do min with zero
 %              - set to 'none' to compute reachable set (not tube)
-%              - set to 'data0' to do min with data0 (for variational
-%                inequality)
 %   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
 %     .obstacles:  a single obstacle or a list of obstacles with time
 %                  stamps tau (obstacles must have same time stamp as the
 %                  solution)
-%     .compRegion: unused for now (meant to limit computation region)
 %     .visualize:  set to true to visualize reachable set
 %     .plotData:   information required to plot the data (need to fill in)
 %     .stopInit:   stop the computation once the reachable set includes the
@@ -42,11 +39,11 @@ if numel(tau) < 2
   error('Time vector must have at least two elements!')
 end
 
-if nargin < 4
+if nargin < 5
   minWith = 'zero';
 end
 
-if nargin < 5
+if nargin < 6
   extraArgs = [];
 end
 
@@ -105,58 +102,55 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
 startTime = cputime;
 
 if schemeData.grid.dim == 1
-  data = zeros(length(data0), length(tau));
+  datal = zeros(length(data0l), length(tau));
+  datau = zeros(length(data0u), length(tau));
 else
-  data = zeros([size(data0) length(tau)]);
+  datal = zeros([size(data0l) length(tau)]);
+  datau = zeros([size(data0u) length(tau)]);
 end
 
-data(colons{:}, 1) = data0;
-% eval(updateData_cmd(g.dim, '1'));
+datal(colons{:}, 1) = data0l;
+datau(colons{:}, 1) = data0u;
 
+schemeDataLower = schemeData;
+schemeDataUpper = schemeData;
 for i = 2:length(tau)
   %   y0 = eval(get_dataStr(g.dim, 'i-1'));
-  y0 = data(colons{:}, i-1);
-  y = y0(:);
+  y0l = datal(colons{:}, i-1);
+  y0u = datau(colons{:}, i-1);
+  yl = y0l(:);
+  yu = y0u(:);
   
   tNow = tau(i-1);
+  %% Main computation
   while tNow < tau(i) - small
     % Save previous data if needed
     if strcmp(minWith, 'zero')
-      yLast = y;
+      ylLast = yl;
+      yuLast = yu;
     end
     
-    [tNow, y] = feval(integratorFunc, schemeFunc, [tNow tau(i)], y, ...
-      integratorOptions, schemeData);
-    
+    % Compute controls to be used
+    [ul, uu] = dblInt_JC_MIE(yl, yu, schemeData);
+    schemeDataLower.uIn = ul;
+    [~, yl] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yl, ...
+      integratorOptions, schemeDataLower);
+
+    schemeDataUpper.uIn = uu;
+    [tNow, yu] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yu, ...
+      integratorOptions, schemeDataUpper);    
     % Min with zero
     if strcmp(minWith, 'zero')
-      y = min(y, yLast);
-    end
-    
-    % Min with data0
-    if strcmp(minWith, 'data0')
-      y = min(y, data0(:));
-    end
-    
-    % "Mask" using obstacles
-    if isfield(extraArgs, 'obstacles')
-      if numDims(obstacles) == schemeData.grid.dim
-        y = max(y, -obstacles(:));
-      else
-        % obstacle = obstacles(:,:,:,i)
-        %         obstacle_i = eval(get_dataStr(g.dim, 'i', 'obstacles'));
-        obstacle_i = obstacles(colons{:}, i);
-        y = max(y, -obstacle_i(:));
-      end
+      yl = min(yl, ylLast);
+      yu = min(yu, yuLast);
     end
   end
   
   % Reshape value function
-  % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
-  data(colons{:}, i) = reshape(y, schemeData.grid.shape);
-  %   eval(updateData_cmd(g.dim, 'i'));
+  datal(colons{:}, i) = reshape(yl, schemeData.grid.shape);
+  datau(colons{:}, i) = reshape(yu, schemeData.grid.shape);
   
-  % If commanded, stop the reachable set computation once it contains
+  %% If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraArgs, 'stopInit')
     if iscolumn(initState)
@@ -164,10 +158,11 @@ for i = 2:length(tau)
     end
     %     reachSet = eval(get_dataStr(g.dim, 'i'));
     %     initValue = eval_u(g, reachSet, initState);
-    initValue = eval_u(schemeData.grid, data(colons{:}, i), initState);
+    initValue = eval_u(schemeData.grid, datal(colons{:}, i), initState);
     if ~isnan(initValue) && initValue <= 0
       extraOuts.stoptau = tau(i);
-      data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
+      datal(colons{:}, i+1:size(datal, schemeData.grid.dim+1)) = [];
+      datau(colons{:}, i+1:size(datau, schemeData.grid.dim+1)) = [];
       tau(i+1:end) = [];
       break
     end
@@ -193,7 +188,7 @@ for i = 2:length(tau)
     figure(f)
     
     if projDims == 0
-      extraOuts.hT = visSetIm(schemeData.grid, data(colons{:}, i), ...
+      extraOuts.hT = visSetMIE(schemeData.grid, datal(colons{:}, i), ...
         'r', 0, [], false);
       
       if need_light && schemeData.grid.dim == 3
@@ -202,16 +197,15 @@ for i = 2:length(tau)
         need_light = false;
       end
     else
-      [gProj, dataProj] = proj(schemeData.grid, data(colons{:}, i), ...
+      [gProj, dataProj] = proj(schemeData.grid, datal(colons{:}, i), ...
         1-plotDims, projpt);
-      extraOuts.hT = visSetIm(gProj, dataProj, 'r', 0, [], false);
+      extraOuts.hT = visSetMIE(gProj, dataProj, 'r', 0, [], false);
       
       if need_light && gProj.dim == 3
         camlight left
         camlight right
         need_light = false;
       end
-      
     end
     
     drawnow;
