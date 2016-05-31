@@ -1,5 +1,8 @@
 function ...
   alpha = dblInt_partial(t, data, derivMin, derivMax, schemeData, dim)
+% alpha = dblInt_partial(t, data, derivMin, derivMax, schemeData, dim)
+%
+% 
 
 checkStructureFields(schemeData, 'grid', 'uMax');
 
