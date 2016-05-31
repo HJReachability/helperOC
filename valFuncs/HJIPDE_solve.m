@@ -25,6 +25,8 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %     .plotData:   information required to plot the data (need to fill in)
 %     .stopInit:   stop the computation once the reachable set includes the
 %                  initial state
+%     .stopSet:    stops computation when reachable set includes another
+%                  this set
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -80,9 +82,23 @@ if isfield(extraArgs, 'visualize') && extraArgs.visualize
   need_light = true;
 end
 
-% Extract the information about stopInit
+% Check validity of stopInit if needed
 if isfield(extraArgs, 'stopInit')
-  initState = extraArgs.stopInit.initState;
+  if ~isvector(extraArgs.stopInit) || ...
+      schemeData.grid.dim ~= length(extraArgs.stopInit)
+    error('stopInit must be a vector of length g.dim!')
+  end
+end
+
+% Check validity of stopSet if needed
+if isfield(extraArgs, 'stopSet')
+  if numDims(extraArgs.stopSet) ~= schemeData.grid.dim || ...
+      any(size(extraArgs.stopSet) ~= schemeData.grid.N')
+    error('Inconsistent stopSet dimensions!')
+  end
+  
+  % Extract set of indices at which stopSet is negative
+  setInds = find(extraArgs.stopSet(:) < 0);
 end
 
 %% SchemeFunc and SchemeData
@@ -111,10 +127,8 @@ else
 end
 
 data(colons{:}, 1) = data0;
-% eval(updateData_cmd(g.dim, '1'));
 
 for i = 2:length(tau)
-  %   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0 = data(colons{:}, i-1);
   y = y0(:);
   
@@ -143,8 +157,6 @@ for i = 2:length(tau)
       if numDims(obstacles) == schemeData.grid.dim
         y = max(y, -obstacles(:));
       else
-        % obstacle = obstacles(:,:,:,i)
-        %         obstacle_i = eval(get_dataStr(g.dim, 'i', 'obstacles'));
         obstacle_i = obstacles(colons{:}, i);
         y = max(y, -obstacle_i(:));
       end
@@ -152,20 +164,26 @@ for i = 2:length(tau)
   end
   
   % Reshape value function
-  % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
   data(colons{:}, i) = reshape(y, schemeData.grid.shape);
-  %   eval(updateData_cmd(g.dim, 'i'));
   
   % If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraArgs, 'stopInit')
-    if iscolumn(initState)
-      initState = initState';
-    end
-    %     reachSet = eval(get_dataStr(g.dim, 'i'));
-    %     initValue = eval_u(g, reachSet, initState);
-    initValue = eval_u(schemeData.grid, data(colons{:}, i), initState);
+    initValue = ...
+      eval_u(schemeData.grid, data(colons{:}, i), extraArgs.stopInit);
     if ~isnan(initValue) && initValue <= 0
+      extraOuts.stoptau = tau(i);
+      data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
+      tau(i+1:end) = [];
+      break
+    end
+  end
+  
+  if isfield(extraArgs, 'stopSet')
+    temp = data(colons{:}, i);
+    dataInds = find(temp(:) < 0);
+    
+    if all(ismember(setInds, dataInds))
       extraOuts.stoptau = tau(i);
       data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
       tau(i+1:end) = [];
