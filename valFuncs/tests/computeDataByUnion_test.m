@@ -1,7 +1,7 @@
 function computeDataByUnion_test(whatTest)
 % Tests the computeDataByUnion function
 if nargin < 1
-  whatTest = 'backward';
+  whatTest = 'forward';
 end
 
 % Set this to true if we only want to take the union over boundary points
