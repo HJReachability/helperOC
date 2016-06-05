@@ -46,6 +46,10 @@ if nargin < 4
   minWith = 'zero';
 end
 
+if numDims(data0) ~= schemeData.grid.dim
+  error('Grid and data0 have inconsistent dimensions!')
+end
+
 if nargin < 5
   extraArgs = [];
 end
@@ -83,6 +87,12 @@ end
 % Extract the information about stopInit
 if isfield(extraArgs, 'stopInit')
   initState = extraArgs.stopInit.initState;
+end
+
+% Extract cdynamical system if needed
+if isfield(schemeData, 'dynSys')
+  schemeData.hamFunc = @genericHam;
+  schemeData.partialFunc = @genericPartial;  
 end
 
 %% SchemeFunc and SchemeData
