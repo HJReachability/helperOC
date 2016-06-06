@@ -1,10 +1,10 @@
 function genericHamTest()
 
 %% Initialization
-N = 75;
+N = 101;
 % MIE initial value functions
 gMIE = createGrid(-11, 11, N);
-data0Upper = 0.25*gMIE.xs{1};
+data0Upper = 0.75*gMIE.xs{1};
 data0Lower = gMIE.xs{1};
 
 % Implicit value function
@@ -38,19 +38,32 @@ sDMIEiupper = sDMIEilower;
 sDMIEiupper.uMode = 'max';
 dataUpper = HJIPDE_solve(data0Upper, tau, sDMIEiupper, 'none', extraArgs);
 
-
 %% MIE solve jointly
-
+sDMIEj.grid = gMIE;
+sDMIEj.uModeU = 'max';
+sDMIEj.uModeL = 'min';
+sDMIEj.dynSys = dblInt;
+sDMIEj.MIEdims = 1;
+[datal, datau] = HJIPDE_MIEsolve(data0Lower, data0Upper, tau, sDMIEj, 'none');
 
 %% Visualize
+figure
 visSetIm(gIm, data(:,:,end));
 hold on
 
 h = visSetMIE(gMIE, dataLower(:,end));
+h.LineStyle = ':';
+h.LineWidth = 2;
+
+h = visSetMIE(gMIE, dataUpper(:,end));
+h.LineStyle = ':';
+h.LineWidth = 2;
+
+h = visSetMIE(gMIE, datal(:,end));
 h.LineStyle = '--';
 h.LineWidth = 1.5;
 
-h = visSetMIE(gMIE, dataUpper(:,end));
+h = visSetMIE(gMIE, datau(:,end));
 h.LineStyle = '--';
 h.LineWidth = 1.5;
 

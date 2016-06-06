@@ -17,7 +17,7 @@ end
 if isfield(schemeData, 'uIn')
   % Control
   u = schemeData.uIn;
-  dx = dynSys.dynamics(t, g.xs, u);
+  dx = dynSys.dynamics(t, g.xs, u, MIEdims);
   alpha = abs(dx{dim + MIEdims});
 else
   % Optimal control assuming maximum deriv
