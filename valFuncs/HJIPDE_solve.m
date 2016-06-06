@@ -13,8 +13,6 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  .grid: grid (required!)
 %   minWith    - set to 'zero' to do min with zero
 %              - set to 'none' to compute reachable set (not tube)
-%              - set to 'data0' to do min with data0 (for variational
-%                inequality)
 %   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
 %     .obstacles:  a single obstacle or a list of obstacles with time
@@ -27,6 +25,13 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  initial state
 %     .stopSet:    stops computation when reachable set includes another
 %                  this set
+%     .targets:    a single target or a list of targets with time
+%                  stamps tau (targets must have same time stamp as the
+%                  solution). This functionality is mainly useful when the
+%                  targets are time-varying, in case of variational 
+%                  inequality for example; data0 can be used to
+%                  specify the target otherwise.
+%       
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -60,6 +65,11 @@ colons = repmat({':'}, 1, schemeData.grid.dim);
 % Extract the information about obstacles
 if isfield(extraArgs, 'obstacles')
   obstacles = extraArgs.obstacles;
+end
+
+% Extract the information about targets
+if isfield(extraArgs, 'targets')
+  targets = extraArgs.targets;
 end
 
 if isfield(extraArgs, 'visualize') && extraArgs.visualize
@@ -147,9 +157,14 @@ for i = 2:length(tau)
       y = min(y, yLast);
     end
     
-    % Min with data0
-    if strcmp(minWith, 'data0')
-      y = min(y, data0(:));
+    % Min with targets
+    if isfield(extraArgs, 'targets')
+      if numDims(targets) == schemeData.grid.dim
+        y = min(y, targets(:));
+      else
+        target_i = targets(colons{:}, i);
+        y = min(y, target_i(:));
+      end
     end
     
     % "Mask" using obstacles
