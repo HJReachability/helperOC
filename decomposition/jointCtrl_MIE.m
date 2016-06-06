@@ -33,8 +33,8 @@ uu(~this_active_inds) = uli(~this_active_inds);
 %% Control when the boundaries are near each other
 % Assumed spacing in x direction
 dx = g.dx; % Equal spacing
-grid_width = 6; % 5 grid points wide
-actual_width = 4; % must be within 3 grid points to be "combined"
+grid_width = 6; % local grid width (in number of grid points)
+actual_width = 2; % grid width for applying joint control
 extra_width = grid_width - actual_width;
 
 % Create a grid of this width in the y direction

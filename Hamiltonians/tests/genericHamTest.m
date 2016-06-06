@@ -1,14 +1,15 @@
 function genericHamTest()
 
+L = 3;
 %% Initialization
-N = 101;
+N = 401;
 % MIE initial value functions
-gMIE = createGrid(-11, 11, N);
-data0Upper = 0.75*gMIE.xs{1};
+gMIE = createGrid(-L, L, N);
+data0Upper = 0.5*gMIE.xs{1};
 data0Lower = gMIE.xs{1};
 
 % Implicit value function
-gTI = createGrid(-11, 11, N);
+gTI = createGrid(-L, L, N);
 [gIm, data0u] = MIE2Implicit(gMIE, data0Upper, 'upper', gTI);
 [~, data0l] = MIE2Implicit(gMIE, data0Lower, 'lower', gTI);
 data0 = max(data0u, data0l);
@@ -48,26 +49,28 @@ sDMIEj.MIEdims = 1;
 
 %% Visualize
 figure
-visSetIm(gIm, data(:,:,end));
+hIm = visSetIm(gIm, data(:,:,end));
 hold on
 
-h = visSetMIE(gMIE, dataLower(:,end));
-h.LineStyle = ':';
-h.LineWidth = 2;
+hMIEil = visSetMIE(gMIE, dataLower(:,end));
+hMIEil.LineStyle = ':';
+hMIEil.LineWidth = 2;
 
-h = visSetMIE(gMIE, dataUpper(:,end));
-h.LineStyle = ':';
-h.LineWidth = 2;
+hMIEiu = visSetMIE(gMIE, dataUpper(:,end));
+hMIEiu.LineStyle = ':';
+hMIEiu.LineWidth = 2;
 
-h = visSetMIE(gMIE, datal(:,end));
-h.LineStyle = '--';
-h.LineWidth = 1.5;
+hMIEl = visSetMIE(gMIE, datal(:,end));
+hMIEl.LineStyle = '--';
+hMIEl.LineWidth = 1.5;
 
-h = visSetMIE(gMIE, datau(:,end));
-h.LineStyle = '--';
-h.LineWidth = 1.5;
+hMIEu = visSetMIE(gMIE, datau(:,end));
+hMIEu.LineStyle = '--';
+hMIEu.LineWidth = 1.5;
 
-xlim([-10 10])
-ylim([-10 10])
+legend([hIm, hMIEil, hMIEl], {'Implicit', 'Independent MIE', 'Joint MIE'})
+
+xlim([-L L])
+ylim([-L L])
 grid on
 end
