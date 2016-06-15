@@ -196,7 +196,7 @@ for i = 2:length(tau)
   
   if isfield(extraArgs, 'stopSet')
     temp = data(colons{:}, i);
-    dataInds = find(temp(:) < 0);
+    dataInds = find(temp(:) <= 0);
     
     if all(ismember(setInds, dataInds))
       extraOuts.stoptau = tau(i);
