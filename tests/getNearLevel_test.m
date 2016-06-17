@@ -20,11 +20,16 @@ if strcmp(whatTest, 'cylinder')
   data = shapeCylinder(g, 3, zeros(3,1), R);
 end
 
+%% Test using example SPP data
+if strcmp(whatTest, 'SPP')
+  load('getNearLevel_testData')
+end
+
 %% Compute gradient
 grad = extractCostates(g, data);
 
 %% Compute and display nearLevel
-nearLevel = getNearLevel(g, data, grad);
+nearLevel = getNearLevel(g, data, grad, 0, min(0.9*g.dx));
 
 fprintf('  g.dx = [%f; %f; %f]\n  nearLevel = %f\n', ...
   g.dx(1), g.dx(2), g.dx(3), nearLevel);
