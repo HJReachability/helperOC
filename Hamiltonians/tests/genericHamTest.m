@@ -2,7 +2,7 @@ function genericHamTest()
 
 L = 3;
 %% Initialization
-N = 401;
+N = 101;
 % MIE initial value functions
 gMIE = createGrid(-L, L, N);
 data0Upper = 0.5*gMIE.xs{1};
@@ -15,7 +15,7 @@ gTI = createGrid(-L, L, N);
 data0 = max(data0u, data0l);
 
 % Time
-tMax = 1;
+tMax = 2;
 dt = 0.01;
 tau = 0:dt:tMax;
 

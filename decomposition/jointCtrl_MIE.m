@@ -32,50 +32,52 @@ uu(~this_active_inds) = uli(~this_active_inds);
 
 %% Control when the boundaries are near each other
 % Assumed spacing in x direction
-dx = g.dx; % Equal spacing
-grid_width = 6; % local grid width (in number of grid points)
-actual_width = 2; % grid width for applying joint control
-extra_width = grid_width - actual_width;
+grid_width = 3; % local grid width (in number of grid points)
+width = grid_width * g.dx;
 
-% Create a grid of this width in the y direction
-%   width_threshold*dx \times max(g.vs{1}(cInds)) - min(g.vs{1}(cInds))
-cInds = find(abs(datals - dataus) < actual_width*dx);
+% Range of MIE functions
+maxIR_datau = movmax(dataus, 2*grid_width+1);
+minIR_datau = movmin(dataus, 2*grid_width+1);
+maxIR_datal = movmax(datals, 2*grid_width+1);
+minIR_datal = movmin(datals, 2*grid_width+1);
+
+% Range of implicit functions at x = datal
+maxIR_Vu = datals - maxIR_datau;
+minIR_Vu = datals - minIR_datau;
+maxIR_Vl = maxIR_datal - datals;
+minIR_Vl = minIR_datal - datals;
+
+% Need common control for indices where upper and lower value function ranges
+% overlap (this is sufficient, but not necessary)
+cInds = find(maxIR_Vu>=minIR_Vl & minIR_Vu<=maxIR_Vl);
 
 if isempty(cInds)
   return
 end
 
-cInds = createConsecutiveGroups(cInds);
 for i = 1:length(cInds)
-  % Truncate MIE grid to only contain the part where boundaries are close
-  % together; width is actual_width + extra_width = grid_width
-  [gMIE_local, datal_local] = truncateGrid(g, datals, ...
-    min(g.vs{1}(cInds{i})) - extra_width*dx, ...
-    max(g.vs{1}(cInds{i})) + extra_width*dx);
-  [~, datau_local] = truncateGrid(g, dataus, ...
-    min(g.vs{1}(cInds{i})) - extra_width*dx, ...
-    max(g.vs{1}(cInds{i})) + extra_width*dx);
+  % Lower common control
+  [gMIE_lower, datall_local] = truncateGrid(g, datals - datals(cInds(i)), ...
+    min(g.xs{1}(cInds(i))) - width, max(g.xs{1}(cInds(i))) + width);
+  [~, dataul_local] = truncateGrid(g,  datals(cInds(i)) - dataus, ...
+    min(g.xs{1}(cInds(i))) - width, max(g.xs{1}(cInds(i))) + width);
   
-  % Create terminal integrator grid of width grid_width*dx
-  gInds = min(cInds{i})-extra_width : max(cInds{i})+extra_width;
-  gTI_min = min(min(datals(gInds), dataus(gInds)));
-  gTI_max = max(max(datals(gInds), dataus(gInds)));
-  gTI_N = ceil((gTI_max - gTI_min)/g.dx);
-  gTI = createGrid(gTI_min, gTI_max, gTI_N);
+  datal_local = max(datall_local, dataul_local);
+  PMIEl = extractCostates(gMIE_lower, datal_local);
+  pMIEl = eval_u(gMIE_lower, PMIEl, g.xs{1}(cInds(i)));
   
-  % Convert MIE functions to implicit function
-  [gIm, datalIm] = MIE2Implicit(gMIE_local, datal_local, 'lower', gTI);
-  [~, datauIm] = MIE2Implicit(gMIE_local, datau_local, 'upper', gTI);
-  dataIm = max(datalIm, datauIm);
-  PIm = extractCostates(gIm, dataIm);
+  ul(cInds(i)) = dynSys.optCtrl(t, g.xs{1}(cInds(i)), {pMIEl}, uModeL, MIEdims);
   
-  % Extract gradients of implicit function
-  p2l = eval_u(gIm, PIm{2}, [datals(cInds{i}), g.xs{1}(cInds{i})]);
-  p2u = eval_u(gIm, PIm{2}, [dataus(cInds{i}), g.xs{1}(cInds{i})]);
+  % Upper common control
+  [gMIE_upper, datalu_local] = truncateGrid(g, datals - dataus(cInds(i)), ...
+    min(g.xs{1}(cInds(i))) - width, max(g.xs{1}(cInds(i))) + width);
+  [~, datauu_local] = truncateGrid(g,  dataus(cInds(i)) - dataus, ...
+    min(g.xs{1}(cInds(i))) - width, max(g.xs{1}(cInds(i))) + width);
   
-  ul(cInds{i}) = dynSys.optCtrl(t, {g.xs{1}(cInds{i})}, {p2l}, uModeL, MIEdims);
-  uu(cInds{i}) = dynSys.optCtrl(t, {g.xs{1}(cInds{i})}, {p2u}, uModeL, MIEdims);
+  datau_local = max(datalu_local, datauu_local);
+  PMIEu = extractCostates(gMIE_upper, datau_local);
+  pMIEu = eval_u(gMIE_lower, PMIEu, g.xs{1}(cInds(i)));  
+  
+  uu(cInds(i)) = dynSys.optCtrl(t, g.xs{1}(cInds(i)), {pMIEu}, uModeL, MIEdims);
 end
-
-cInds = cell2mat(cInds);
 end
