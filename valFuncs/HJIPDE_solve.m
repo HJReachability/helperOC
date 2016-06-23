@@ -55,6 +55,10 @@ if nargin < 4
   minWith = 'zero';
 end
 
+if numDims(data0) ~= schemeData.grid.dim
+  error('Grid and data0 have inconsistent dimensions!')
+end
+
 if nargin < 5
   extraArgs = [];
 end
@@ -120,7 +124,15 @@ if isfield(extraArgs, 'stopSet')
   end
 end
 
+<<<<<<< HEAD
 
+=======
+% Extract cdynamical system if needed
+if isfield(schemeData, 'dynSys')
+  schemeData.hamFunc = @genericHam;
+  schemeData.partialFunc = @genericPartial;  
+end
+>>>>>>> decomp_in_progress
 
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;

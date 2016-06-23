@@ -10,18 +10,19 @@ function [datal, datau, tau, extraOuts] = HJIPDE_MIEsolve( ...
 %   data0      - initial value function
 %   tau        - list of computation times
 %   schemeData - problem parameters passed into the Hamiltonian function
-%                  .grid: grid (required!)
+%                    .grid: grid (required!)
+%                    .dynSys: dynamical system (required!)
 %   minWith    - set to 'zero' to do min with zero
 %              - set to 'none' to compute reachable set (not tube)
 %   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
-%     .obstacles:  a single obstacle or a list of obstacles with time
-%                  stamps tau (obstacles must have same time stamp as the
-%                  solution)
-%     .visualize:  set to true to visualize reachable set
-%     .plotData:   information required to plot the data (need to fill in)
-%     .stopInit:   stop the computation once the reachable set includes the
-%                  initial state
+%       .obstacles: a single obstacle or a list of obstacles with time
+%                   stamps tau (obstacles must have same time stamp as the
+%                   solution)
+%       .visualize: set to true to visualize reachable set
+%       .plotData:  information required to plot the data (need to fill in)
+%       .stopInit:  stop the computation once the reachable set includes the
+%                   initial state
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -79,8 +80,12 @@ end
 
 % Extract the information about stopInit
 if isfield(extraArgs, 'stopInit')
-  initState = extraArgs.stopInit.initState;
+  initState = extraArgs.stopInit;
 end
+
+% Extract cdynamical system if needed
+schemeData.hamFunc = @genericHam;
+schemeData.partialFunc = @genericPartial;
 
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
@@ -113,7 +118,9 @@ datal(colons{:}, 1) = data0l;
 datau(colons{:}, 1) = data0u;
 
 schemeDataLower = schemeData;
+schemeDataLower.uMode = schemeData.uModeL;
 schemeDataUpper = schemeData;
+schemeDataUpper.uMode = schemeData.uModeU;
 for i = 2:length(tau)
   %   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0l = datal(colons{:}, i-1);
@@ -131,14 +138,15 @@ for i = 2:length(tau)
     end
     
     % Compute controls to be used
-    [ul, uu] = dblInt_JC_MIE(yl, yu, schemeData);
+    [ul, uu] = jointCtrl_MIE(tNow, yl, yu, schemeData);
     schemeDataLower.uIn = ul;
     [~, yl] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yl, ...
       integratorOptions, schemeDataLower);
 
     schemeDataUpper.uIn = uu;
     [tNow, yu] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yu, ...
-      integratorOptions, schemeDataUpper);    
+      integratorOptions, schemeDataUpper);
+    
     % Min with zero
     if strcmp(minWith, 'zero')
       yl = min(yl, ylLast);
@@ -156,8 +164,7 @@ for i = 2:length(tau)
     if iscolumn(initState)
       initState = initState';
     end
-    %     reachSet = eval(get_dataStr(g.dim, 'i'));
-    %     initValue = eval_u(g, reachSet, initState);
+
     initValue = eval_u(schemeData.grid, datal(colons{:}, i), initState);
     if ~isnan(initValue) && initValue <= 0
       extraOuts.stoptau = tau(i);
