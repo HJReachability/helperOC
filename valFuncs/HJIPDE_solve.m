@@ -124,15 +124,11 @@ if isfield(extraArgs, 'stopSet')
   end
 end
 
-<<<<<<< HEAD
-
-=======
 % Extract cdynamical system if needed
 if isfield(schemeData, 'dynSys')
   schemeData.hamFunc = @genericHam;
   schemeData.partialFunc = @genericPartial;  
 end
->>>>>>> decomp_in_progress
 
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
