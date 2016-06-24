@@ -12,7 +12,6 @@ function gs = sepGrid(g, dims)
 % Output:
 %   gs - cell vector of separated grids
 
-
 gs = cell(size(dims));
 for i = 1:length(dims)
   dims_i = ones(1, g.dim);

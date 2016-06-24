@@ -25,6 +25,8 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  initial state
 %     .stopSet:    stops computation when reachable set includes another
 %                  this set
+%     .stopLevel:  level of the stopSet to check the inclusion for. Default
+%                  level is zero.
 %     .targets:    a single target or a list of targets with time
 %                  stamps tau (targets must have same time stamp as the
 %                  solution). This functionality is mainly useful when the
@@ -51,6 +53,10 @@ end
 
 if nargin < 4
   minWith = 'zero';
+end
+
+if numDims(data0) ~= schemeData.grid.dim
+  error('Grid and data0 have inconsistent dimensions!')
 end
 
 if nargin < 5
@@ -109,6 +115,19 @@ if isfield(extraArgs, 'stopSet')
   
   % Extract set of indices at which stopSet is negative
   setInds = find(extraArgs.stopSet(:) < 0);
+  
+  % Check validity of stopLevel if needed
+  if isfield(extraArgs, 'stopLevel')
+    stopLevel = extraArgs.stopLevel;
+  else
+    stopLevel = 0;
+  end
+end
+
+% Extract cdynamical system if needed
+if isfield(schemeData, 'dynSys')
+  schemeData.hamFunc = @genericHam;
+  schemeData.partialFunc = @genericPartial;  
 end
 
 %% SchemeFunc and SchemeData
@@ -196,7 +215,7 @@ for i = 2:length(tau)
   
   if isfield(extraArgs, 'stopSet')
     temp = data(colons{:}, i);
-    dataInds = find(temp(:) <= 0);
+    dataInds = find(temp(:) <= stopLevel);
     
     if all(ismember(setInds, dataInds))
       extraOuts.stoptau = tau(i);
