@@ -1,4 +1,4 @@
-function g = createGrid(grid_min, grid_max, N, pdDims)
+function g = createGrid(grid_min, grid_max, N, pdDims, process)
 % g = createGrid(grid_min, grid_max, N, pdDim)
 %
 % Thin wrapper around processGrid to create a grid compatible with the
@@ -9,6 +9,9 @@ function g = createGrid(grid_min, grid_max, N, pdDims)
 %   N                  - number of grid points in each dimension
 %   pdDims             - periodic dimensions (eg. pdDims = [2 3] if 2nd and
 %                          3rd dimensions are periodic)
+%   process            - specifies whether to call processGrid to generate
+%                        grid points
+%
 % Output:
 %   g - grid structure
 % 
@@ -16,6 +19,10 @@ function g = createGrid(grid_min, grid_max, N, pdDims)
 
 if nargin < 4
   pdDims = [];
+end
+
+if nargin < 5
+  process = true;
 end
 
 %% Input checks
@@ -51,5 +58,7 @@ for i = 1:length(g.bdry)
   end
 end
 
-g = processGrid(g);
+if process
+  g = processGrid(g);
+end
 end
