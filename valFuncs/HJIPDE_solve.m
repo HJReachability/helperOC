@@ -13,8 +13,6 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  .grid: grid (required!)
 %   minWith    - set to 'zero' to do min with zero
 %              - set to 'none' to compute reachable set (not tube)
-%              - set to 'data0' to do min with data0 (for variational
-%                inequality)
 %   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
 %     .obstacles:  a single obstacle or a list of obstacles with time
@@ -25,6 +23,17 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %     .plotData:   information required to plot the data (need to fill in)
 %     .stopInit:   stop the computation once the reachable set includes the
 %                  initial state
+%     .stopSet:    stops computation when reachable set includes another
+%                  this set
+%     .stopLevel:  level of the stopSet to check the inclusion for. Default
+%                  level is zero.
+%     .targets:    a single target or a list of targets with time
+%                  stamps tau (targets must have same time stamp as the
+%                  solution). This functionality is mainly useful when the
+%                  targets are time-varying, in case of variational 
+%                  inequality for example; data0 can be used to
+%                  specify the target otherwise.
+%       
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -64,6 +73,11 @@ if isfield(extraArgs, 'obstacles')
   obstacles = extraArgs.obstacles;
 end
 
+% Extract the information about targets
+if isfield(extraArgs, 'targets')
+  targets = extraArgs.targets;
+end
+
 if isfield(extraArgs, 'visualize') && extraArgs.visualize
   % Extract the information about plotData
   if isfield(extraArgs, 'plotData')
@@ -84,9 +98,30 @@ if isfield(extraArgs, 'visualize') && extraArgs.visualize
   need_light = true;
 end
 
-% Extract the information about stopInit
+% Check validity of stopInit if needed
 if isfield(extraArgs, 'stopInit')
-  initState = extraArgs.stopInit.initState;
+  if ~isvector(extraArgs.stopInit) || ...
+      schemeData.grid.dim ~= length(extraArgs.stopInit)
+    error('stopInit must be a vector of length g.dim!')
+  end
+end
+
+% Check validity of stopSet if needed
+if isfield(extraArgs, 'stopSet')
+  if numDims(extraArgs.stopSet) ~= schemeData.grid.dim || ...
+      any(size(extraArgs.stopSet) ~= schemeData.grid.N')
+    error('Inconsistent stopSet dimensions!')
+  end
+  
+  % Extract set of indices at which stopSet is negative
+  setInds = find(extraArgs.stopSet(:) < 0);
+  
+  % Check validity of stopLevel if needed
+  if isfield(extraArgs, 'stopLevel')
+    stopLevel = extraArgs.stopLevel;
+  else
+    stopLevel = 0;
+  end
 end
 
 % Extract cdynamical system if needed
@@ -121,10 +156,8 @@ else
 end
 
 data(colons{:}, 1) = data0;
-% eval(updateData_cmd(g.dim, '1'));
 
 for i = 2:length(tau)
-  %   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0 = data(colons{:}, i-1);
   y = y0(:);
   
@@ -143,9 +176,14 @@ for i = 2:length(tau)
       y = min(y, yLast);
     end
     
-    % Min with data0
-    if strcmp(minWith, 'data0')
-      y = min(y, data0(:));
+    % Min with targets
+    if isfield(extraArgs, 'targets')
+      if numDims(targets) == schemeData.grid.dim
+        y = min(y, targets(:));
+      else
+        target_i = targets(colons{:}, i);
+        y = min(y, target_i(:));
+      end
     end
     
     % "Mask" using obstacles
@@ -153,8 +191,6 @@ for i = 2:length(tau)
       if numDims(obstacles) == schemeData.grid.dim
         y = max(y, -obstacles(:));
       else
-        % obstacle = obstacles(:,:,:,i)
-        %         obstacle_i = eval(get_dataStr(g.dim, 'i', 'obstacles'));
         obstacle_i = obstacles(colons{:}, i);
         y = max(y, -obstacle_i(:));
       end
@@ -162,20 +198,26 @@ for i = 2:length(tau)
   end
   
   % Reshape value function
-  % data(:,:,:,i) = reshape(y, schemeData.grid.shape);
   data(colons{:}, i) = reshape(y, schemeData.grid.shape);
-  %   eval(updateData_cmd(g.dim, 'i'));
   
   % If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraArgs, 'stopInit')
-    if iscolumn(initState)
-      initState = initState';
-    end
-    %     reachSet = eval(get_dataStr(g.dim, 'i'));
-    %     initValue = eval_u(g, reachSet, initState);
-    initValue = eval_u(schemeData.grid, data(colons{:}, i), initState);
+    initValue = ...
+      eval_u(schemeData.grid, data(colons{:}, i), extraArgs.stopInit);
     if ~isnan(initValue) && initValue <= 0
+      extraOuts.stoptau = tau(i);
+      data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
+      tau(i+1:end) = [];
+      break
+    end
+  end
+  
+  if isfield(extraArgs, 'stopSet')
+    temp = data(colons{:}, i);
+    dataInds = find(temp(:) <= stopLevel);
+    
+    if all(ismember(setInds, dataInds))
       extraOuts.stoptau = tau(i);
       data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
       tau(i+1:end) = [];

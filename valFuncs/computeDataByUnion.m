@@ -1,5 +1,5 @@
 function data = ...
-  computeDataByUnion(g, data0, base_g, base_data, pdims, adim, bdry_only)
+  computeDataByUnion(base_g, base_data, g, data0, pdims, adim, bdry_only)
 % data = ...
 %   computeDataByUnion(base_g, base_data, g, data0, pdims, adim, bdry_only)
 %       Computes the reachable set using by taking unions of a base

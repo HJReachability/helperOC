@@ -4,14 +4,17 @@ function HJIPDE_solve_test(whatTest)
 %   use it.
 %
 % whatTest - Argument that can be used to test a particular feature
-%   'minWith'   - Test the minWith functionality
-%   'singleObs' - Test with a single static obstacle
-%   'tvObs'     - Test with time-verying obstacles
-%   'obs_stau'  - single obstacle over a few time steps
-%   'stopInit'  - Test the functionality of stopping reachable set
-%                 computation once it includes the initial state
-%   'plotData'  - Test the functionality of plotting reachable sets as they
-%   are being computed
+%     'minWith':   Test the minWith functionality
+%     'tvTargets': Test the time-varying targets
+%     'singleObs': Test with a single static obstacle
+%     'tvObs':     Test with time-varying obstacles
+%     'obs_stau':  single obstacle over a few time steps
+%     'stopInit':  Test the functionality of stopping reachable set
+%                  computation once it includes the initial state
+%     'stopSet':   Test the functionality of stopping reacahble set
+%                  computation once it contains some set
+%     'plotData':  Test the functionality of plotting reachable sets as
+%                  they are being computed
 
 if nargin < 1
   whatTest = 'minWith';
@@ -53,7 +56,7 @@ schemeData.partialFunc = @dubins3Dpartial;
 
 %% Compute time-dependent value function
 if strcmp(whatTest, 'minWith')
-  minWiths = {'none', 'zero', 'data0'};
+  minWiths = {'none', 'zero'};
   % selecting 'zero' computes reachable tube (usually, choose this option)
   % selecting 'none' computes reachable set
   % selecting 'data0' computes reachable tube, but only use this if there are
@@ -86,16 +89,47 @@ end
 
 % Change visualization code as necessary
 
-%% Test using single obstacle
-if strcmp(whatTest, 'singleObs')
-  obstacles = shapeCylinder(g, 3, [1.5; 1.5; 0], 0.75*R);
-  extraArgs.obstacles = obstacles;
+%% Test using time-varying targets
+if strcmp(whatTest, 'tvTargets')
+  targets = zeros([size(data0) length(tau)]);
+  for i = 1:length(tau)
+    targets(:,:,:,i) = shapeCylinder(g, 3, [1.5; 1.5; 0], i/length(tau)*R);
+  end
+  extraArgs.targets = targets;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraArgs);
+  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
+  
+  % Visualize
+  figure;
+  for i = 1:numPlots
+    subplot(spR, spC, i)
+    ind = ceil(i * length(tau) / numPlots);
+    visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
+      ['TD value function, t = ' num2str(tau(ind))]);
+    axis(g.axis)
+    camlight left
+    camlight right
+    drawnow
+  end
+end
+
+%% Test using single obstacle
+if strcmp(whatTest, 'singleObs')
+  obstacles = shapeCylinder(g, 3, [1.5; 1.5; 0], 0.75*R);
+  extraArgs.obstacles = obstacles;
+  
+  targets = data0;
+  extraArgs.targets = targets;
+  
+  numPlots = 4;
+  spC = ceil(sqrt(numPlots));
+  spR = ceil(numPlots / spC);
+  
+  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
   
   % Visualize
   figure;
@@ -119,11 +153,14 @@ if strcmp(whatTest, 'tvObs')
   end
   extraArgs.obstacles = obstacles;
   
+  targets = data0;
+  extraArgs.targets = targets;
+  
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraArgs);
+  [data, tau, ~] = HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
   
   % Visualize
   figure;
@@ -145,11 +182,14 @@ if strcmp(whatTest, 'obs_stau')
   tau = linspace(0, 2, 5);
   extraArgs.obstacles = obstacles;
   
+  targets = data0;
+  extraArgs.targets = targets;
+  
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau] = HJIPDE_solve(data0, tau, schemeData, 'data0', extraArgs);
+  [data, tau] = HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
   
   % Visualize
   figure;
@@ -167,15 +207,15 @@ end
 
 %% Test the inclusion of initial state
 if strcmp(whatTest, 'stopInit')
-  extraArgs.stopInit.initState = [-1.1, -1.1, 0]';
+  extraArgs.stopInit = [-1.1, -1.1, 0];
   tau = linspace(0, 2, 5);
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'data0', ...
-    extraArgs);
+  [data, tau, extraOuts] = ...
+    HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
   
   % Visualize
   figure;
@@ -184,6 +224,34 @@ if strcmp(whatTest, 'stopInit')
     ind = ceil(i * length(tau) / numPlots);
     visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
       ['TD value function, t = ' num2str(tau(ind))]);
+    axis(g.axis)
+    camlight left
+    camlight right
+    drawnow
+  end
+end
+
+%% Test the inclusion of initial state
+if strcmp(whatTest, 'stopSet')
+  extraArgs.stopSet = shapeSphere(g, [-1.1 1.1 0], 0.5);
+  tau = linspace(0, 2, 5);
+  
+  numPlots = 4;
+  spC = ceil(sqrt(numPlots));
+  spR = ceil(numPlots / spC);
+  
+  [data, tau, extraOuts] = ...
+    HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
+  
+  % Visualize
+  figure;
+  for i = 1:numPlots
+    subplot(spR, spC, i)
+    ind = ceil(i * length(tau) / numPlots);
+    visSetIm(g, extraArgs.stopSet, 'b');
+    h = visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
+      ['TD value function, t = ' num2str(tau(ind))]);
+    h.FaceAlpha = 0.6;
     axis(g.axis)
     camlight left
     camlight right
@@ -202,7 +270,7 @@ if strcmp(whatTest, 'plotData')
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'data0', ...
+  [data, tau, extraOuts] = HJIPDE_solve(data0, tau, schemeData, 'none', ...
     extraArgs);
   
   % Visualize
@@ -218,4 +286,5 @@ if strcmp(whatTest, 'plotData')
     drawnow
   end
 end
+
 end

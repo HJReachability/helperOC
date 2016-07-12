@@ -1,4 +1,22 @@
 function gs = splitGrid_sameDim(g, bounds, padding)
+% gs = splitGrid_sameDim(g, bounds, padding)
+%     Splits the grid into smaller grids, each with specified bounds.
+%     Optionally, padding can be specified so that the grids overlap
+%
+% Inputs:
+%     g      - original grid
+%     bounds - list of bounds of the smaller grids. This should be a g.dim
+%              dimensional matrix that specifies the "grid" of bounds.
+%         For example, suppose the original grid is a [-1, 1]^2 grid in 2D.
+%         Then, the following bounds would split it into [-1, 0]^2, [0, 1]^2,
+%         [-1, 0] x [0, 1], and [0, 1] x [-1, 0] grids:
+%             bounds = {[-1, 0, 1], [-1, 0, 1]};
+%     padding - amount of overlap between two adjacent subgrids
+%
+% Output:
+%     gs - subgrids
+%
+
 
 %% Create a grid for the bounds
 % ndgrid(bounds{1}, bounds{2}, bounds{3});

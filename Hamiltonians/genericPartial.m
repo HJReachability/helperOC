@@ -8,29 +8,42 @@ if ~isfield(schemeData, 'uMode')
   schemeData.uMode = 'min';
 end
 
+if ~isfield(schemeData, 'dMode')
+  schemeData.dMode = 'min';
+end
+
 MIEdims = 0;
 if isfield(schemeData, 'MIEdims')
   MIEdims = schemeData.MIEdims;
 end
 
-%% Compute alpha
+%% Compute control
 if isfield(schemeData, 'uIn')
   % Control
-  u = schemeData.uIn;
-  dx = dynSys.dynamics(t, g.xs, u, MIEdims);
-  alpha = abs(dx{dim + MIEdims});
+  uU = schemeData.uIn;
+  uL = schemeData.uIn;
+ 
 else
   % Optimal control assuming maximum deriv
   uU = dynSys.optCtrl(t, g.xs, derivMax, schemeData.uMode, MIEdims);
-  dxU = dynSys.dynamics(t, g.xs, uU, MIEdims);
   
   % Optimal control assuming minimum deriv
   uL = dynSys.optCtrl(t, g.xs, derivMin, schemeData.uMode, MIEdims);
-  dxL = dynSys.dynamics(t, g.xs, uL, MIEdims);
-  
-  alpha = max(abs(dxU{dim + MIEdims}), abs(dxL{dim + MIEdims}));
 end
 
-
+%% Compute disturbance
+if isfield(schemeData, 'dIn')
+  dU = schemeData.dIn;
+  dL = schemeData.dIn;
+  
+else
+  dU = dynSys.optDstb(t, g.xs, derivMax, schemeData.dMode, MIEdims);
+  dL = dynSys.optDstb(t, g.xs, derivMin, schemeData.dMode, MIEdims);
+end
+  
+%% Compute alpha
+dxU = dynSys.dynamics(t, g.xs, uU, dU, MIEdims);
+dxL = dynSys.dynamics(t, g.xs, uL, dL, MIEdims);
+alpha = max(abs(dxU{dim + MIEdims}), abs(dxL{dim + MIEdims}));
 
 end
