@@ -36,10 +36,9 @@ for i = 1:numel(gs)
     grid_max = cat(1, grid_max, bounds_grid{j}(iip{:}));
   end
   
-  grid_min = grid_min - eps*ones(g.dim, 1) - padding;
-  grid_max = grid_max + eps*ones(g.dim, 1) + padding;
+  [grid_min, grid_max, N] = getOGPBounds(g, grid_min, grid_max, padding);
   
-  gs{ii{:}} = truncateGrid(g, [], grid_min, grid_max);
+  gs{ii{:}} = createGrid(grid_min, grid_max, N);
 end
 
 end

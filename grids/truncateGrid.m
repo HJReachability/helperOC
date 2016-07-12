@@ -1,9 +1,12 @@
-function [gNew, dataNew] = truncateGrid(gOld, dataOld, xmin, xmax)
+function [gNew, dataNew] = truncateGrid(gOld, dataOld, xmin, xmax, process)
 % [gNew, dataNew] = truncateGrid(gOld, dataOld, xmin, xmax)
 %    Truncates dataOld to be within the bounds xmin and xmax
 %
-% Inputs: gOld, gNew - old and new grid structures
-%         dataOld    - data corresponding to old grid structure
+% Inputs: 
+%   gOld, gNew - old and new grid structures
+%   dataOld    - data corresponding to old grid structure
+%   process    - specifies whether to call processGrid to generate
+%                grid points
 %
 % Output: dataNew    - equivalent data corresponding to new grid structure
 %
@@ -11,6 +14,10 @@ function [gNew, dataNew] = truncateGrid(gOld, dataOld, xmin, xmax)
 
 % Gather indices of new grid vectors that are within the bounds of the old
 % grid
+
+if nargin < 5
+  process = true;
+end
 
 gNew.dim = gOld.dim;
 gNew.vs = cell(gNew.dim, 1);
@@ -29,7 +36,13 @@ for i = 1:gNew.dim
   end
 end
 
-gNew = processGrid(gNew);
+if process
+  gNew = processGrid(gNew);
+end
+
+if nargout < 2
+  return
+end
 
 dataNew = [];
 % Truncate everything that's outside of xmin and xmax

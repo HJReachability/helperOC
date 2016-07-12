@@ -1,4 +1,4 @@
-function [gOut, dataOut] = proj(g, data, dims, xs, NOut)
+function [gOut, dataOut] = proj(g, data, dims, xs, NOut, process)
 % [gOut, dataOut] = proj(g, data, dims, xs, NOut)
 %   Projects data corresponding to the grid g in g.dim dimensions, removing
 %   dimensions specified in dims. If a point is specified, a slice of the
@@ -17,6 +17,8 @@ function [gOut, dataOut] = proj(g, data, dims, xs, NOut)
 %   NOut    - number of grid points in output grid (defaults to the same
 %             number of grid points of the original grid in the unprojected
 %             dimensions)
+%   process            - specifies whether to call processGrid to generate
+%                        grid points
 %
 % Outputs:
 %   gOut    - grid corresponding to projected data
@@ -51,7 +53,11 @@ if nargin < 5
   NOut = g.N(~dims);
 end
 
-% Create ouptut grid by keeping dimensions that we are not collapsing
+if nargin < 6
+  process = true;
+end
+
+%% Create ouptut grid by keeping dimensions that we are not collapsing
 dims = logical(dims);
 gOut.dim = nnz(~dims);
 gOut.min = g.min(~dims);
@@ -64,7 +70,10 @@ else
   gOut.N = NOut;
 end
 
-gOut = processGrid(gOut);
+% Process the grid to populate the remaining fields if necessary
+if process
+  gOut = processGrid(gOut);
+end
 
 % Only compute the grid if value function is not requested
 if nargout < 2

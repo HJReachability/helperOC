@@ -7,7 +7,7 @@ function gs = sepGrid(g, dims)
 %   dims - cell structure of grid dimensions
 %            eg. {[1 3], [2 4]} would split the grid into two; one grid in
 %                the 1st and 3rd dimensions, and another in the 2nd and 4th
-%                dimenisons
+%                dimensions
 %
 % Output:
 %   gs - cell vector of separated grids
