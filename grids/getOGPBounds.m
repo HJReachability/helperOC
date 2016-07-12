@@ -36,6 +36,6 @@ for dim = 1:gBase.dim
   gMinOut(dim) = refGridPt + ptrMin*dx(dim);
   
   % Get number of grid points
-  NOut(dim) = ptrMax - ptrMin;
+  NOut(dim) = ptrMax - ptrMin + 1;
 end
 end
