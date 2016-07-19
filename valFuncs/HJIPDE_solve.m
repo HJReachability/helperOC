@@ -261,7 +261,7 @@ for i = istart:length(tau)
     % Basic Checks
     if(length(plotDims) ~= schemeData.grid.dim || ...
         projDims ~= (schemeData.grid.dim - pDims))
-      error('Mismatch between plot and grid dimesnions!');
+      error('Mismatch between plot and grid dimensions!');
     end
     
     if (pDims >= 4 || schemeData.grid.dim > 4)
