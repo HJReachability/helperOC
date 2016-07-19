@@ -300,7 +300,7 @@ for i = istart:length(tau)
   if isfield(extraArgs, 'save_filename')
     if mod(i, extraArgs.saveFrequency)
       datatemp = data(colons{:}, 1:i);
-      save(extraArgs.save_filename, 'datatemp', 'tau')
+      save(extraArgs.save_filename, 'datatemp', 'tau', '-v7.3')
     end
   end
 end
