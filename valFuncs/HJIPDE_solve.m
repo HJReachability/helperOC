@@ -60,10 +60,6 @@ if nargin < 4
   minWith = 'zero';
 end
 
-if numDims(data0) ~= schemeData.grid.dim
-  error('Grid and data0 have inconsistent dimensions!')
-end
-
 if nargin < 5
   extraArgs = [];
 end
@@ -156,15 +152,21 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
 
 startTime = cputime;
 
-if schemeData.grid.dim == 1
-  data = zeros(length(data0), length(tau));
+data0size = size(data0);
+data = zeros([data0size(1:schemeData.grid.dim) length(tau)]);
+
+%% Initialize the first block of data to be data0
+if numDims(data0) == schemeData.grid.dim
+  data(colons{:}, 1) = data0;
+  istart = 2;
+elseif numDims(data0) == schemeData.grid.dim + 1
+  data(colons{:}, 1:data0size(end)) = data0;
+  istart = data0size(end)+1;
 else
-  data = zeros([size(data0) length(tau)]);
+  error('Inconsistent initial condition dimension!')
 end
 
-data(colons{:}, 1) = data0;
-
-for i = 2:length(tau)
+for i = istart:length(tau)
   %% Variable schemeData
   if isfield(extraArgs, 'SDModFunc')
     if isfield(extraArgs, 'SDModParams')
