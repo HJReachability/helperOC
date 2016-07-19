@@ -30,10 +30,15 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %     .targets:    a single target or a list of targets with time
 %                  stamps tau (targets must have same time stamp as the
 %                  solution). This functionality is mainly useful when the
-%                  targets are time-varying, in case of variational 
+%                  targets are time-varying, in case of variational
 %                  inequality for example; data0 can be used to
 %                  specify the target otherwise.
-%       
+%     .SDModFunc:  Function for modifying scheme data every time step given by
+%                  tau. Currently this is only used to switch between using
+%                  optimal control at every grid point and using maximal control
+%                  for the SPP project when computing FRS using centralized
+%                  controller
+%     .SDModParams: parameter used along with .SMModFunc
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -71,6 +76,8 @@ colons = repmat({':'}, 1, schemeData.grid.dim);
 % Extract the information about obstacles
 if isfield(extraArgs, 'obstacles')
   obstacles = extraArgs.obstacles;
+else
+  obstacles = [];
 end
 
 % Extract the information about targets
@@ -127,7 +134,7 @@ end
 % Extract cdynamical system if needed
 if isfield(schemeData, 'dynSys')
   schemeData.hamFunc = @genericHam;
-  schemeData.partialFunc = @genericPartial;  
+  schemeData.partialFunc = @genericPartial;
 end
 
 %% SchemeFunc and SchemeData
@@ -158,10 +165,23 @@ end
 data(colons{:}, 1) = data0;
 
 for i = 2:length(tau)
+  %% Variable schemeData
+  if isfield(extraArgs, 'SDModFunc')
+    if isfield(extraArgs, 'SDModParams')
+      paramsIn = extraArgs.SDModParams;
+    else
+      paramsIn = [];
+    end
+    
+    schemeData = extraArgs.SDModFunc( ...
+      schemeData, i, tau, data, obstacles, paramsIn);
+  end
+  
   y0 = data(colons{:}, i-1);
   y = y0(:);
   
   tNow = tau(i-1);
+  %% Main integration loop to get to the next tau(i)
   while tNow < tau(i) - small
     % Save previous data if needed
     if strcmp(minWith, 'zero')
@@ -200,7 +220,7 @@ for i = 2:length(tau)
   % Reshape value function
   data(colons{:}, i) = reshape(y, schemeData.grid.shape);
   
-  % If commanded, stop the reachable set computation once it contains
+  %% If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraArgs, 'stopInit')
     initValue = ...
@@ -213,6 +233,7 @@ for i = 2:length(tau)
     end
   end
   
+  %% Stop computation if reachable set contains a "stopSet"
   if isfield(extraArgs, 'stopSet')
     temp = data(colons{:}, i);
     dataInds = find(temp(:) <= stopLevel);
@@ -224,7 +245,7 @@ for i = 2:length(tau)
       break
     end
   end
-  
+ 
   %% If commanded, visualize the level set.
   if isfield(extraArgs, 'visualize') && extraArgs.visualize
     % Number of dimensions to be plotted and to be projected
@@ -265,8 +286,16 @@ for i = 2:length(tau)
       end
       
     end
-    
+    title(['t = ' num2str(tNow)])
     drawnow;
+  end
+  
+  %% Save the results if needed
+  if isfield(extraArgs, 'save_filename')
+    if mod(i, extraArgs.saveFrequency)
+      datatemp = data(colons{:}, 1:i);
+      save(extraArgs.save_filename, 'datatemp', 'tau')
+    end
   end
 end
 
