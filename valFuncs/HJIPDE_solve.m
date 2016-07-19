@@ -33,12 +33,16 @@ function [data, tau, extraOuts] = HJIPDE_solve( ...
 %                  targets are time-varying, in case of variational
 %                  inequality for example; data0 can be used to
 %                  specify the target otherwise.
-%     .SDModFunc:  Function for modifying scheme data every time step given by
-%                  tau. Currently this is only used to switch between using
-%                  optimal control at every grid point and using maximal control
-%                  for the SPP project when computing FRS using centralized
-%                  controller
-%     .SDModParams: parameter used along with .SMModFunc
+%
+%     .SDModFunc, .SDModParams:  
+%         Function for modifying scheme data every time step given by tau. 
+%         Currently this is only used to switch between using optimal control at
+%         every grid point and using maximal control for the SPP project when 
+%         computing FRS using centralized controller
+%
+%     .save_filename, .saveFrequency:
+%         file name under which temporary data is saved at some frequency in
+%         terms of the number of time steps
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
