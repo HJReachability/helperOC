@@ -29,10 +29,19 @@ function [data, tau, extraOuts] = ...
 %     .targets:    a single target or a list of targets with time
 %                  stamps tau (targets must have same time stamp as the
 %                  solution). This functionality is mainly useful when the
-%                  targets are time-varying, in case of variational 
+%                  targets are time-varying, in case of variational
 %                  inequality for example; data0 can be used to
 %                  specify the target otherwise.
-%       
+%
+%     .SDModFunc, .SDModParams:  
+%         Function for modifying scheme data every time step given by tau. 
+%         Currently this is only used to switch between using optimal control at
+%         every grid point and using maximal control for the SPP project when 
+%         computing FRS using centralized controller
+%
+%     .save_filename, .saveFrequency:
+%         file name under which temporary data is saved at some frequency in
+%         terms of the number of time steps
 %
 % Outputs:
 %   data - solution corresponding to grid g and time vector tau
@@ -54,10 +63,6 @@ if nargin < 4
   minWith = 'zero';
 end
 
-if numDims(data0) ~= schemeData.grid.dim
-  error('Grid and data0 have inconsistent dimensions!')
-end
-
 if nargin < 5
   extraArgs = [];
 end
@@ -70,6 +75,8 @@ colons = repmat({':'}, 1, schemeData.grid.dim);
 % Extract the information about obstacles
 if isfield(extraArgs, 'obstacles')
   obstacles = extraArgs.obstacles;
+else
+  obstacles = [];
 end
 
 % Extract the information about targets
@@ -126,7 +133,7 @@ end
 % Extract cdynamical system if needed
 if isfield(schemeData, 'dynSys')
   schemeData.hamFunc = @genericHam;
-  schemeData.partialFunc = @genericPartial;  
+  schemeData.partialFunc = @genericPartial;
 end
 
 %% SchemeFunc and SchemeData
@@ -148,19 +155,38 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
 
 startTime = cputime;
 
-if schemeData.grid.dim == 1
-  data = zeros(length(data0), length(tau));
+data0size = size(data0);
+data = zeros([data0size(1:schemeData.grid.dim) length(tau)]);
+
+%% Initialize the first block of data to be data0
+if numDims(data0) == schemeData.grid.dim
+  data(colons{:}, 1) = data0;
+  istart = 2;
+elseif numDims(data0) == schemeData.grid.dim + 1
+  data(colons{:}, 1:data0size(end)) = data0;
+  istart = data0size(end)+1;
 else
-  data = zeros([size(data0) length(tau)]);
+  error('Inconsistent initial condition dimension!')
 end
 
-data(colons{:}, 1) = data0;
-
-for i = 2:length(tau)
+for i = istart:length(tau)
+  %% Variable schemeData
+  if isfield(extraArgs, 'SDModFunc')
+    if isfield(extraArgs, 'SDModParams')
+      paramsIn = extraArgs.SDModParams;
+    else
+      paramsIn = [];
+    end
+    
+    schemeData = extraArgs.SDModFunc( ...
+      schemeData, i, tau, data, obstacles, paramsIn);
+  end
+  
   y0 = data(colons{:}, i-1);
   y = y0(:);
   
   tNow = tau(i-1);
+  %% Main integration loop to get to the next tau(i)
   while tNow < tau(i) - small
     % Save previous data if needed
     if strcmp(minWith, 'zero')
@@ -199,7 +225,7 @@ for i = 2:length(tau)
   % Reshape value function
   data(colons{:}, i) = reshape(y, schemeData.grid.shape);
   
-  % If commanded, stop the reachable set computation once it contains
+  %% If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraArgs, 'stopInit')
     initValue = ...
@@ -212,6 +238,7 @@ for i = 2:length(tau)
     end
   end
   
+  %% Stop computation if reachable set contains a "stopSet"
   if isfield(extraArgs, 'stopSet')
     temp = data(colons{:}, i);
     dataInds = find(temp(:) <= stopLevel);
@@ -223,7 +250,7 @@ for i = 2:length(tau)
       break
     end
   end
-  
+ 
   %% If commanded, visualize the level set.
   if isfield(extraArgs, 'visualize') && extraArgs.visualize
     % Number of dimensions to be plotted and to be projected
@@ -233,7 +260,7 @@ for i = 2:length(tau)
     % Basic Checks
     if(length(plotDims) ~= schemeData.grid.dim || ...
         projDims ~= (schemeData.grid.dim - pDims))
-      error('Mismatch between plot and grid dimesnions!');
+      error('Mismatch between plot and grid dimensions!');
     end
     
     if (pDims >= 4 || schemeData.grid.dim > 4)
@@ -264,8 +291,16 @@ for i = 2:length(tau)
       end
       
     end
-    
+    title(['t = ' num2str(tNow)])
     drawnow;
+  end
+  
+  %% Save the results if needed
+  if isfield(extraArgs, 'save_filename')
+    if mod(i, extraArgs.saveFrequency)
+      datatemp = data(colons{:}, 1:i);
+      save(extraArgs.save_filename, 'datatemp', 'tau', '-v7.3')
+    end
   end
 end
 

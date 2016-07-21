@@ -47,12 +47,11 @@ wMax = 1;
 
 %% Pack problem parameters
 schemeData.grid = g; % Grid MUST be specified!
-schemeData.wMax = wMax;
-schemeData.vrange = speed;
 
-% ----- System dynamics are specified here -----
-schemeData.hamFunc = @dubins3Dham;
-schemeData.partialFunc = @dubins3Dpartial;
+% Dynamical system parameters
+dCar = DubinsCar([0, 0, 0], 1, 1);
+schemeData.grid = g;
+schemeData.dynSys = dCar;
 
 %% Compute time-dependent value function
 if strcmp(whatTest, 'minWith')
@@ -262,8 +261,8 @@ end
 %% Test the intermediate plotting
 if strcmp(whatTest, 'plotData')
   extraArgs.visualize = true;
-%   extraArgs.plotData.plotDims = [1, 1, 0];
-%   extraArgs.plotData.projpt = pi/2;
+  %   extraArgs.plotData.plotDims = [1, 1, 0];
+  %   extraArgs.plotData.projpt = pi/2;
   tau = linspace(0, 2, 5);
   
   numPlots = 4;
@@ -287,4 +286,29 @@ if strcmp(whatTest, 'plotData')
   end
 end
 
+%% Test starting from saved data (where data0 has dimension g.dim + 1)
+if strcmp(whatTest, 'savedData')
+  % Compute data1
+  extraArgs.visualize = true;
+  data1 = HJIPDE_solve(data0, tau, schemeData, 'zero', extraArgs);
+  
+  % Cut off data1 at tcutoff
+  tcutoff = 0.5;
+  dataSaved = data1(:, :, :, tau<=tcutoff);
+  
+  % Continue computing
+  data2 = HJIPDE_solve(dataSaved, tau, schemeData, 'zero', extraArgs);
+  
+  % Plot the two results and compare
+  figure;
+  h1 = visSetIm(g, data1(:,:,:,end));
+  h1.FaceAlpha = 0.5;
+  hold on
+  h2 = visSetIm(g, data2(:,:,:,end), 'b');
+  h2.FaceAlpha = 0.5;
+  
+  % Display error
+  disp(['Computation from saved data differs from full computation by ' ...
+    'an error of ' num2str(sum((data1(:) - data2(:)).^2))])
+end
 end

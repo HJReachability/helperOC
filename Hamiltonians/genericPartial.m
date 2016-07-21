@@ -45,5 +45,4 @@ end
 dxU = dynSys.dynamics(t, g.xs, uU, dU, MIEdims);
 dxL = dynSys.dynamics(t, g.xs, uL, dL, MIEdims);
 alpha = max(abs(dxU{dim + MIEdims}), abs(dxL{dim + MIEdims}));
-
 end
