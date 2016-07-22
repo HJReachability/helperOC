@@ -4,6 +4,12 @@ function alpha = genericPartial(t, data, derivMin, derivMax, schemeData, dim)
 g = schemeData.grid;
 dynSys = schemeData.dynSys;
 
+if ismethod(dynSys, 'partialFunc')
+%   disp('Using partial function from dynamical system')
+  alpha = dynSys.partialFunc(t, data, derivMin, derivMax, schemeData, dim);
+  return
+end
+
 if ~isfield(schemeData, 'uMode')
   schemeData.uMode = 'min';
 end

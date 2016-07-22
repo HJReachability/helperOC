@@ -53,11 +53,6 @@ small = 1e-4;
 colons = repmat({':'}, 1, schemeData.grid.dim);
 
 %% Extract the information from extraargs
-% Extract the information about obstacles
-if isfield(extraArgs, 'obstacles')
-  obstacles = extraArgs.obstacles;
-end
-
 if isfield(extraArgs, 'visualize') && extraArgs.visualize
   % Extract the information about plotData
   if isfield(extraArgs, 'plotData')
@@ -78,12 +73,7 @@ if isfield(extraArgs, 'visualize') && extraArgs.visualize
   need_light = true;
 end
 
-% Extract the information about stopInit
-if isfield(extraArgs, 'stopInit')
-  initState = extraArgs.stopInit;
-end
-
-% Extract cdynamical system if needed
+% Extract dynamical system if needed
 schemeData.hamFunc = @genericHam;
 schemeData.partialFunc = @genericPartial;
 
@@ -158,23 +148,6 @@ for i = 2:length(tau)
   datal(colons{:}, i) = reshape(yl, schemeData.grid.shape);
   datau(colons{:}, i) = reshape(yu, schemeData.grid.shape);
   
-  %% If commanded, stop the reachable set computation once it contains
-  % the initial state.
-  if isfield(extraArgs, 'stopInit')
-    if iscolumn(initState)
-      initState = initState';
-    end
-
-    initValue = eval_u(schemeData.grid, datal(colons{:}, i), initState);
-    if ~isnan(initValue) && initValue <= 0
-      extraOuts.stoptau = tau(i);
-      datal(colons{:}, i+1:size(datal, schemeData.grid.dim+1)) = [];
-      datau(colons{:}, i+1:size(datau, schemeData.grid.dim+1)) = [];
-      tau(i+1:end) = [];
-      break
-    end
-  end
-  
   %% If commanded, visualize the level set.
   if isfield(extraArgs, 'visualize') && extraArgs.visualize
     % Number of dimensions to be plotted and to be projected
@@ -184,7 +157,7 @@ for i = 2:length(tau)
     % Basic Checks
     if(length(plotDims) ~= schemeData.grid.dim || ...
         projDims ~= (schemeData.grid.dim - pDims))
-      error('Mismatch between plot and grid dimesnions!');
+      error('Mismatch between plot and grid dimensions!');
     end
     
     if (pDims >= 4 || schemeData.grid.dim > 4)
