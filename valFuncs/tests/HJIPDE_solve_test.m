@@ -49,7 +49,7 @@ wMax = 1;
 schemeData.grid = g; % Grid MUST be specified!
 
 % Dynamical system parameters
-dCar = DubinsCar([0, 0, 0], 1, 1);
+dCar = DubinsCar([0, 0, 0], wMax, speed);
 schemeData.grid = g;
 schemeData.dynSys = dCar;
 
@@ -294,7 +294,9 @@ if strcmp(whatTest, 'savedData')
   
   % Cut off data1 at tcutoff
   tcutoff = 0.5;
-  dataSaved = data1(:, :, :, tau<=tcutoff);
+  dataSaved = data1;
+  dataSaved(:, :, :, tau>tcutoff) = 0;
+  extraArgs.istart = nnz(tau<=tcutoff) + 1;
   
   % Continue computing
   data2 = HJIPDE_solve(dataSaved, tau, schemeData, 'zero', extraArgs);

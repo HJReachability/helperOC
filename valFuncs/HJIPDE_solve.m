@@ -156,16 +156,24 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
 
 startTime = cputime;
 
+%% Initialize PDE solution
 data0size = size(data0);
 data = zeros([data0size(1:schemeData.grid.dim) length(tau)]);
 
-%% Initialize the first block of data to be data0
 if numDims(data0) == schemeData.grid.dim
+  % New computation
   data(colons{:}, 1) = data0;
   istart = 2;
 elseif numDims(data0) == schemeData.grid.dim + 1
+  % Continue an old computation
   data(colons{:}, 1:data0size(end)) = data0;
-  istart = data0size(end)+1;
+
+  % Start at custom starting index if specified  
+  if isfield(extraArgs, 'istart')
+    istart = extraArgs.istart;
+  else
+    istart = data0size(end)+1;
+  end
 else
   error('Inconsistent initial condition dimension!')
 end
@@ -298,9 +306,8 @@ for i = istart:length(tau)
   
   %% Save the results if needed
   if isfield(extraArgs, 'save_filename')
-    if mod(i, extraArgs.saveFrequency)
-      datatemp = data(colons{:}, 1:i);
-      save(extraArgs.save_filename, 'datatemp', 'tau', '-v7.3')
+    if mod(i, extraArgs.saveFrequency) == 0
+      save(extraArgs.save_filename, 'data', 'tau', 'i', '-v7.3')
     end
   end
 end
