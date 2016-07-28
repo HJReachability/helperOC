@@ -307,7 +307,8 @@ for i = istart:length(tau)
   %% Save the results if needed
   if isfield(extraArgs, 'save_filename')
     if mod(i, extraArgs.saveFrequency) == 0
-      save(extraArgs.save_filename, 'data', 'tau', 'i', '-v7.3')
+      ilast = i;
+      save(extraArgs.save_filename, 'data', 'tau', 'ilast', '-v7.3')
     end
   end
 end
