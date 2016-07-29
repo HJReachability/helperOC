@@ -111,6 +111,9 @@ schemeDataLower = schemeData;
 schemeDataLower.uMode = schemeData.uModeL;
 schemeDataUpper = schemeData;
 schemeDataUpper.uMode = schemeData.uModeU;
+
+schemeDataLower.MIEside = 'lower';
+schemeDataUpper.MIEside = 'upper';
 for i = 2:length(tau)
   %   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0l = datal(colons{:}, i-1);
@@ -127,15 +130,23 @@ for i = 2:length(tau)
       yuLast = yu;
     end
     
+    schemeDataLower.uZero = yu;
+    schemeDataLower.lZero = yl;
+
+    schemeDataUpper.uZero = yu;
+    schemeDataUpper.lZero = yl;
+    
     % Compute controls to be used
     [ul, uu] = jointCtrl_MIE(tNow, yl, yu, schemeData);
     schemeDataLower.uIn = ul;
+    
     [~, yl] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yl, ...
       integratorOptions, schemeDataLower);
 
     schemeDataUpper.uIn = uu;
     [tNow, yu] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yu, ...
       integratorOptions, schemeDataUpper);
+    
     
     % Min with zero
     if strcmp(minWith, 'zero')
