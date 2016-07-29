@@ -25,7 +25,8 @@ if length(tau) ~= size(TD, g.dim+1)
 end
 
 %% Compute TTR
-TTR = inf(g.N');
+large = 10*max(tau);
+TTR = large*ones(g.N');
 
 for i = 1:length(tau)
   % TTR(TD(:,:,:,i) <= 0) = 0; if i == 1
