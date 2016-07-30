@@ -4,6 +4,12 @@ function alpha = genericPartial(t, data, derivMin, derivMax, schemeData, dim)
 g = schemeData.grid;
 dynSys = schemeData.dynSys;
 
+if ismethod(dynSys, 'partialFunc')
+%   disp('Using partial function from dynamical system')
+  alpha = dynSys.partialFunc(t, data, derivMin, derivMax, schemeData, dim);
+  return
+end
+
 if ~isfield(schemeData, 'uMode')
   schemeData.uMode = 'min';
 end
@@ -12,10 +18,15 @@ if ~isfield(schemeData, 'dMode')
   schemeData.dMode = 'min';
 end
 
-MIEdims = 0;
+TIdim = [];
+dims = 1:dynSys.nx;
 if isfield(schemeData, 'MIEdims')
-  MIEdims = schemeData.MIEdims;
+  TIdim = schemeData.TIdim;
+  dims = schemeData.MIEdims;
 end
+
+x = cell(dynSys.nx, 1);
+x(dims) = g.xs;
 
 %% Compute control
 if isfield(schemeData, 'uIn')
@@ -25,10 +36,10 @@ if isfield(schemeData, 'uIn')
  
 else
   % Optimal control assuming maximum deriv
-  uU = dynSys.optCtrl(t, g.xs, derivMax, schemeData.uMode, MIEdims);
+  uU = dynSys.optCtrl(t, g.xs, derivMax, schemeData.uMode, dims);
   
   % Optimal control assuming minimum deriv
-  uL = dynSys.optCtrl(t, g.xs, derivMin, schemeData.uMode, MIEdims);
+  uL = dynSys.optCtrl(t, g.xs, derivMin, schemeData.uMode, dims);
 end
 
 %% Compute disturbance
@@ -37,12 +48,15 @@ if isfield(schemeData, 'dIn')
   dL = schemeData.dIn;
   
 else
-  dU = dynSys.optDstb(t, g.xs, derivMax, schemeData.dMode, MIEdims);
-  dL = dynSys.optDstb(t, g.xs, derivMin, schemeData.dMode, MIEdims);
+  dU = dynSys.optDstb(t, g.xs, derivMax, schemeData.dMode, dims);
+  dL = dynSys.optDstb(t, g.xs, derivMin, schemeData.dMode, dims);
 end
   
 %% Compute alpha
-dxU = dynSys.dynamics(t, g.xs, uU, dU, MIEdims);
-dxL = dynSys.dynamics(t, g.xs, uL, dL, MIEdims);
-alpha = max(abs(dxU{dim + MIEdims}), abs(dxL{dim + MIEdims}));
+x = cell(dynSys.nx, 1);
+x(dims) = g.xs;
+
+dxU = dynSys.dynamics(t, x, uU, dU, dims(dim));
+dxL = dynSys.dynamics(t, x, uL, dL, dims(dim));
+alpha = max(dxU{1}, dxL{1});
 end

@@ -1,10 +1,9 @@
-function [data, tau, extraOuts] = HJIPDE_solve( ...
-  data0, tau, schemeData, minWith, extraArgs)
-% [data, tau] = HJIPDE_solve( ...
-%   data0, tau, schemeData, minWith, extraargs)
-%
-% Solves HJIPDE with initial conditions data0, at times tau, and with
-% parameters schemeData and obstacles
+function [data, tau, extraOuts] = ...
+  HJIPDE_solve(data0, tau, schemeData, minWith, extraArgs)
+% [data, tau, extraOuts] = ...
+%   HJIPDE_solve(data0, tau, schemeData, minWith, extraargs)
+%     Solves HJIPDE with initial conditions data0, at times tau, and with
+%     parameters schemeData and extraArgs
 %
 % Inputs:
 %   data0      - initial value function
