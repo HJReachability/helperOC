@@ -19,9 +19,9 @@ end
 
 % Minimize Hamiltonian
 if strcmp(dMode, 'max')
-  dOpt = (deriv{3}>=0)*obj.bMax + (deriv{3}<0)*(-obj.bMax);
+  dOpt = (deriv{3}>=0)*obj.dMax + (deriv{3}<0)*(-obj.dMax);
 else
-  dOpt = (deriv{3}>=0)*(-obj.bMax) + (deriv{3}<0)*obj.bMax;
+  dOpt = (deriv{3}>=0)*(-obj.dMax) + (deriv{3}<0)*obj.dMax;
 end
 
 

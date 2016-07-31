@@ -1,8 +1,8 @@
 classdef Air3D < DynSys
   properties
     % Control bounds
-    aMax    
-    bMax
+    uMax    
+    dMax
     
     % Vehicle speeds
     va
@@ -11,7 +11,7 @@ classdef Air3D < DynSys
   end % end properties
  
   methods
-    function obj = Air3D(x, aMax, bMax, va, vb)
+    function obj = Air3D(x, uMax, dMax, va, vb)
       % obj = Air3D(x, aMax, bMax, va, vb)
       %
       
@@ -21,12 +21,12 @@ classdef Air3D < DynSys
   
       %% Process control range
       if nargin < 2
-        aMax = 1;
-        bMax = 1;
+        uMax = 1;
+        dMax = 1;
       end
       
-      obj.aMax = aMax;
-      obj.bMax = bMax;
+      obj.uMax = uMax;
+      obj.dMax = dMax;
       
       %% Process speeds
       if nargin < 4
@@ -36,6 +36,10 @@ classdef Air3D < DynSys
       
       obj.va = va;
       obj.vb = vb;
+      
+      obj.nx = 3;
+      obj.nu = 1;
+      obj.nd = 1;
       
     end % end constructor
   end % end methods

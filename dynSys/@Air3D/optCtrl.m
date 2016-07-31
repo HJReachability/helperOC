@@ -22,9 +22,9 @@ det = deriv{1}.*y{2}  - deriv{2}.*y{1} - deriv{3};
 
 % Maximize Hamiltonian
 if strcmp(uMode, 'max')
-  uOpt = (det>=0)*obj.aMax + (det<0)*(-obj.aMax);
+  uOpt = (det>=0)*obj.uMax + (det<0)*(-obj.uMax);
 else
-  uOpt = (det>=0)*(-obj.aMax) + (det<0)*obj.aMax;
+  uOpt = (det>=0)*(-obj.uMax) + (det<0)*obj.uMax;
 end
 
 end

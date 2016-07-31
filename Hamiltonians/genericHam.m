@@ -17,6 +17,7 @@ if ~isfield(schemeData, 'tMode')
   schemeData.tMode = 'backward';
 end
 
+% Dimension information (in case we're doing MIE)
 TIdim = [];
 dims = 1:dynSys.nx;
 if isfield(schemeData, 'MIEdims')
