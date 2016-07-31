@@ -56,7 +56,11 @@ end
 x = cell(dynSys.nx, 1);
 x(dims) = g.xs;
 
-dxU = dynSys.dynamics(t, x, uU, dU, dims(dim));
-dxL = dynSys.dynamics(t, x, uL, dL, dims(dim));
-alpha = max(dxU{1}, dxL{1});
+dxUU = dynSys.dynamics(t, x, uU, dU, dims(dim));
+dxUL = dynSys.dynamics(t, x, uU, dL, dims(dim));
+dxLL = dynSys.dynamics(t, x, uL, dL, dims(dim));
+dxLU = dynSys.dynamics(t, x, uL, dU, dims(dim));
+alpha = max(abs(dxUU{dim}), abs(dxUL{dim}));
+alpha = max(alpha, abs(dxLL{dim}));
+alpha = max(alpha, abs(dxLU{dim}));
 end
