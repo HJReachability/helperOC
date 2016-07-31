@@ -7,12 +7,12 @@ if isfield(schemeData, 'MIEdims')
   dims = schemeData.MIEdims;
 end
 
-x = cell(dynSys.nx, 1);
-x(dims) = g.xs;
+x = cell(obj.nx, 1);
+x(dims) = schemeData.grid.xs;
 
 switch dims(dim)
   case 1
-    alpha = abs(schemeData.grid.xs{2});
+    alpha = abs(x{2});
   case 2
     alpha = obj.uMax;
   otherwise
