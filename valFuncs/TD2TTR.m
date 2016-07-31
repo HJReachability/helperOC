@@ -25,31 +25,13 @@ if length(tau) ~= size(TD, g.dim+1)
 end
 
 %% Compute TTR
-large = 10*max(tau);
-TTR = large*ones(g.N');
+TTR = nan(g.N');
 
-for i = 1:length(tau)
-  % TTR(TD(:,:,:,i) <= 0) = 0; if i == 1
-  % TTR(TD(:,:,:,i) <= 0) = min(tau(i), TTR(TD(:,:,:,i) <= 0)); otherwise
-  eval(updateTTR_cmd(g.dim, 'i'));
-end
+colons = repmat({':'}, 1, g.dim);
+TTR(TD(colons{:}, 1) <= 0) = 0;
 
-end
-
-function cmdStr = updateTTR_cmd(dims, indStr)
-% TTR = updateTTR(TD, TTR, tau, i)
-% Generates command to update TTR function
-
-%% Generate command for updating TTR
-% TTR(TD(:,:,:,i) <= 0)
-cmdStr = ['TTR(' get_dataStr(dims, 'i', 'TD') ' <= 0)'];
-
-if strcmp(indStr, '1')
-  % TTR(TD(:,:,:,i) <= 0) = 0;
-  cmdStr = cat(2, cmdStr, ' = 0;');
-else
-  % TTR(TD(:,:,:,i) <= 0) = min(tau(i), TTR(TD(:,:,:,i) <= 0));
-  cmdStr = cat(2, cmdStr, [' = min(tau(i), ' cmdStr ');']);
+for i = 2:length(tau)
+  TTR(TD(colons{:}, i) <= 0) = min(tau(i), TTR(TD(colons{:}, i) <= 0));
 end
 
 end
