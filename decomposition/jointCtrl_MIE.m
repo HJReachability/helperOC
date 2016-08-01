@@ -6,20 +6,20 @@ function [ul, uu, cInds] = jointCtrl_MIE(t, datals, dataus, schemeData)
 % Unpack 1D grid
 g = schemeData.grid;
 dynSys = schemeData.dynSys;
-uModeU = schemeData.uModeU;
-uModeL = schemeData.uModeL;
+uMode = schemeData.uMode;
 MIEdims = schemeData.MIEdims;
 
-Pl = extractCostates(g, datals);
-Pu = extractCostates(g, dataus);
+% Compute implied gradient of the implicit value function V
+grad_l = computeGradients(g, datals); % For lower function, Vlower = phi - x
+grad_u = computeGradients(g, -dataus); % For upper function, Vupper = x - phi
 
 ul = zeros(size(datals));
 uu = zeros(size(dataus));
 
-%% Control when boundaries are far away
+%% Control when Vupper and Vlower differ by a lot
 % Control if boundaries are independent
-uli = dynSys.optCtrl(t, g.xs, Pl, uModeL, MIEdims);
-uui = dynSys.optCtrl(t, g.xs, Pu, uModeU, MIEdims);
+uli = dynSys.optCtrl(t, g.xs, grad_l, uMode, MIEdims);
+uui = dynSys.optCtrl(t, g.xs, grad_u, uMode, MIEdims);
 
 % Control if boundaries are dependent
 this_active_inds = datals < dataus;
@@ -30,10 +30,9 @@ ul(~this_active_inds) = uui(~this_active_inds);
 uu(this_active_inds) = uui(this_active_inds);
 uu(~this_active_inds) = uli(~this_active_inds);
 
-%% Control when the boundaries are near each other
-% Assumed spacing in x direction
-grid_width = 3; % local grid width (in number of grid points)
-width = grid_width * g.dx;
+%% Control when Vupper and Vlower affect each other's gradients
+grid_width = 3;            % local grid width (in number of grid points)
+width = grid_width * g.dx; % local grid width
 
 % Range of MIE functions
 maxIR_datau = movmax(dataus, 2*grid_width+1);
@@ -63,10 +62,10 @@ for i = 1:length(cInds)
     min(g.xs{1}(cInds(i))) - width, max(g.xs{1}(cInds(i))) + width);
   
   datal_local = max(datall_local, dataul_local);
-  PMIEl = extractCostates(gMIE_lower, datal_local);
+  PMIEl = computeGradients(gMIE_lower, datal_local);
   pMIEl = eval_u(gMIE_lower, PMIEl, g.xs{1}(cInds(i)));
   
-  ul(cInds(i)) = dynSys.optCtrl(t, g.xs{1}(cInds(i)), {pMIEl}, uModeL, MIEdims);
+  ul(cInds(i)) = dynSys.optCtrl(t, g.xs{1}(cInds(i)), {pMIEl}, uMode, MIEdims);
   
   % Upper common control
   [gMIE_upper, datalu_local] = truncateGrid(g, datals - dataus(cInds(i)), ...
@@ -75,9 +74,9 @@ for i = 1:length(cInds)
     min(g.xs{1}(cInds(i))) - width, max(g.xs{1}(cInds(i))) + width);
   
   datau_local = max(datalu_local, datauu_local);
-  PMIEu = extractCostates(gMIE_upper, datau_local);
+  PMIEu = computeGradients(gMIE_upper, datau_local);
   pMIEu = eval_u(gMIE_lower, PMIEu, g.xs{1}(cInds(i)));  
   
-  uu(cInds(i)) = dynSys.optCtrl(t, g.xs{1}(cInds(i)), {pMIEu}, uModeL, MIEdims);
+  uu(cInds(i)) = dynSys.optCtrl(t, g.xs{1}(cInds(i)), {pMIEu}, uMode, MIEdims);
 end
 end

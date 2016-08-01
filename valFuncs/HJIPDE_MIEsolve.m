@@ -77,6 +77,13 @@ end
 schemeData.hamFunc = @genericHam;
 schemeData.partialFunc = @genericPartial;
 
+% Terminal integrator derivative
+absVal = abs(schemeData.gTI.xs{1});
+[~, avDerivL, avDerivR] = computeGradients(schemeData.gTI, absVal);
+avDeriv.g = schemeData.gTI;
+avDeriv.derivL = avDerivL{1};
+avDeriv.derivR = avDerivR{1};
+
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
 % Extract accuracy parameter o/w set default accuracy
@@ -108,12 +115,9 @@ datal(colons{:}, 1) = data0l;
 datau(colons{:}, 1) = data0u;
 
 schemeDataLower = schemeData;
-schemeDataLower.uMode = schemeData.uModeL;
 schemeDataUpper = schemeData;
-schemeDataUpper.uMode = schemeData.uModeU;
-
-schemeDataLower.MIEside = 'lower';
-schemeDataUpper.MIEside = 'upper';
+schemeDataLower.deriv = cell(schemeData.grid.dim+1, 1);
+schemeDataUpper.deriv = cell(schemeData.grid.dim+1, 1);
 for i = 2:length(tau)
   %   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0l = datal(colons{:}, i-1);
@@ -130,23 +134,24 @@ for i = 2:length(tau)
       yuLast = yu;
     end
     
-    schemeDataLower.uZero = yu;
-    schemeDataLower.lZero = yl;
-
-    schemeDataUpper.uZero = yu;
-    schemeDataUpper.lZero = yl;
+    % Terminal integrator derivative
+    [pLowerL, pLowerR, pUpperL, pUpperR] = ...
+      jointTIgrad(avDeriv, datal(colons{:}, i-1), datau(colons{:}, i-1));
+    schemeDataLower.deriv{1} = 0.5*(pLowerL + pLowerR);
+    schemeDataUpper.deriv{1} = 0.5*(pUpperL + pUpperR);
     
-    % Compute controls to be used
-    [ul, uu] = jointCtrl_MIE(tNow, yl, yu, schemeData);
-    schemeDataLower.uIn = ul;
+    % Implicit dimension derivatives
+    [pLower, pUpper] = jointMIEgrad(schemeData.grid, ...
+      datal(colons{:}, i-1), datau(colons{:}, i-1));
+    schemeDataLower.deriv(2:end) = pLower;
+    schemeDataUpper.deriv(2:end) = pUpper;
     
     [~, yl] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yl, ...
       integratorOptions, schemeDataLower);
-
-    schemeDataUpper.uIn = uu;
+    
+    schemeDataUpper.tMode = 'forward';
     [tNow, yu] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yu, ...
       integratorOptions, schemeDataUpper);
-    
     
     % Min with zero
     if strcmp(minWith, 'zero')

@@ -1,9 +1,9 @@
 function alpha = partialFunc(obj, ~, ~, ~, ~, schemeData, dim)
 
-TIdim = [];
+% TIdim = [];
 dims = 1:obj.nx;
 if isfield(schemeData, 'MIEdims')
-  TIdim = schemeData.TIdim;
+%   TIdim = schemeData.TIdim;
   dims = schemeData.MIEdims;
 end
 

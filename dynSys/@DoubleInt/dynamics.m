@@ -30,7 +30,7 @@ for i = 1:length(dims)
   %% Populate output variable
   if isnumeric(x)
     dx(i) = dxi;
-  elseif iscell(x)
+  else
     dx{i} = dxi;
   end
 end
