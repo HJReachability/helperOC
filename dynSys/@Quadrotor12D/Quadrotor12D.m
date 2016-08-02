@@ -1,4 +1,4 @@
-classdef Quadrotor12D < Vehicle
+classdef Quadrotor12D < dynSys
   properties
     % Control bounds
     uMin
