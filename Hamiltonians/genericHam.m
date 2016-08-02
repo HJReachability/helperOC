@@ -27,10 +27,10 @@ end
 % TIdim = [];
 dims = 1:dynSys.nx;
 if isfield(schemeData, 'MIEdims')
-%   TIdim = schemeData.TIdim;
+  %   TIdim = schemeData.TIdim;
   dims = schemeData.MIEdims;
 end
-% 
+%
 % TIderiv = -1; % Coefficient correction (for MIE only)
 % dc = 0; % Dissipation compensation (for MIE only)
 
@@ -52,30 +52,37 @@ end
 
 %% Plug optimal control into dynamics to compute Hamiltonian
 dx = dynSys.dynamics(t, x, u, d);
+
 hamValue = 0;
+if isfield(schemeData, 'side')
+  if strcmp(schemeData.side, 'lower')
+    if schemeData.dissComp
+      hamValue = hamValue - schemeData.dc;
+    end
+    
+  elseif strcmp(schemeData.side, 'upper')
+    if schemeData.dissComp
+      hamValue = hamValue + schemeData.dc;
+    end
+    
+    deriv{1} = -deriv{1};
+    if schemeData.trueMIEDeriv
+      deriv{2} = -deriv{2};
+    end
+    
+  else
+    error('Side of an MIE function must be upper or lower!')
+  end
+  
+  if ~schemeData.trueMIEDeriv
+    deriv(2) = computeGradients(schemeData.grid, data);
+  end
+end
 
 % for i = 1:length(dims)
 for i = 1:dynSys.nx
   hamValue = hamValue + deriv{i}.*dx{i};
 end
-
-% %% Modified Hamiltonian for MIE formulation, if needed
-% % Compute coefficient correction and dissipation compensation if necessary
-% if isfield(schemeData, 'absValDeriv');
-%   uZero = schemeData.uZero;
-%   lZero = schemeData.lZero;
-%   
-%   [derivL, derivR] = absValDeriv(schemeData.absValDeriv, lZero, uZero, data);
-%   TIderiv = 0.5*(derivL + derivR);
-%   
-%   dc = dissComp(derivL, derivR, t, data, schemeData);
-% end
-% 
-% if ~isempty(TIdim)
-%   dx = dynSys.dynamics(t, x, u, d, TIdim);
-%   hamValue = hamValue + TIderiv.*dx{1} - dc;
-% end
-
 
 %% Negate hamValue if backward reachable set
 if strcmp(schemeData.tMode, 'backward')

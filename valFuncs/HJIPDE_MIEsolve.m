@@ -116,8 +116,12 @@ datau(colons{:}, 1) = data0u;
 
 schemeDataLower = schemeData;
 schemeDataUpper = schemeData;
+
 schemeDataLower.deriv = cell(schemeData.grid.dim+1, 1);
+schemeDataLower.side = 'lower';
+
 schemeDataUpper.deriv = cell(schemeData.grid.dim+1, 1);
+schemeDataUpper.side = 'upper';
 for i = 2:length(tau)
   %   y0 = eval(get_dataStr(g.dim, 'i-1'));
   y0l = datal(colons{:}, i-1);
@@ -137,8 +141,23 @@ for i = 2:length(tau)
     % Terminal integrator derivative
     [pLowerL, pLowerR, pUpperL, pUpperR] = ...
       jointTIgrad(avDeriv, datal(colons{:}, i-1), datau(colons{:}, i-1));
+    
     schemeDataLower.deriv{1} = 0.5*(pLowerL + pLowerR);
     schemeDataUpper.deriv{1} = 0.5*(pUpperL + pUpperR);
+      
+    % Use dissipation compensation?
+    if schemeData.dissComp
+      % Dissipation compensation
+      schemeDataLower.dc = dissComp( ...
+        pLowerL, pLowerR, tau(i), datal(colons{:}, i-1), schemeDataLower);
+      schemeDataUpper.dc = dissComp( ...
+        pUpperL, pUpperR, tau(i), datau(colons{:}, i-1), schemeDataUpper);
+    end
+    
+    if ~schemeData.trueTIDeriv
+      schemeDataLower.deriv{1} = -1;
+      schemeDataUpper.deriv{1} = 1;
+    end
     
     % Implicit dimension derivatives
     [pLower, pUpper] = jointMIEgrad(schemeData.grid, ...
@@ -146,10 +165,11 @@ for i = 2:length(tau)
     schemeDataLower.deriv(2:end) = pLower;
     schemeDataUpper.deriv(2:end) = pUpper;
     
+ 
+    
     [~, yl] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yl, ...
       integratorOptions, schemeDataLower);
     
-    schemeDataUpper.tMode = 'forward';
     [tNow, yu] = feval(integratorFunc, schemeFunc, [tNow tau(i)], yu, ...
       integratorOptions, schemeDataUpper);
     
