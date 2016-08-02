@@ -10,6 +10,6 @@ if nargin > 3 && upWind
   error('Upwinding has not been implemented!')
 end
 
-[derivC, derivL, derivR] = computeGradients(g, data, derivFunc, upWind);
+[derivC, derivL, derivR] = computeGradients(g, data, derivFunc);
 
 end
