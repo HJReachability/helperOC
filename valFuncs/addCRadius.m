@@ -4,13 +4,12 @@ function dataOut = addCRadius(gIn, dataIn, radius)
 % Expands a set given by gIn and dataIn by radius units all around
 
 % Solve HJI PDE for expanding set
-schemeData.hamFunc = @addCRadiusham;
-schemeData.partialFunc = @addCRadiuspartial;
+schemeData.dynSys = KinVehicleND(zeros(gIn.dim, 1), 1);
 schemeData.grid = gIn;
-schemeData.velocity = radius;
 
-dataOut = HJIPDE_solve(dataIn, [0 1], schemeData, 'zero');
+dataOut = HJIPDE_solve(dataIn, [0 radius], schemeData, 'zero');
 
 % Discard initial set from output
-eval([get_dataStr(gIn.dim, '1', 'dataOut') ' = [];']);
+colons = repmat({':'}, 1, gIn.dim);
+dataOut = dataOut(colons{:}, 2);
 end
