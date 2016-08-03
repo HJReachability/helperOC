@@ -272,7 +272,7 @@ for i = istart:length(tau)
     end
     
     if (pDims >= 4 || schemeData.grid.dim > 4)
-      error('Currently only 3D plotting upto 3D is supported!');
+      error('Currently plotting up to 3D is supported!');
     end
     
     % Visualize the reachable set
