@@ -67,23 +67,31 @@ visSetIm(g2D, reconRSTube2D);
 
 %% Full computation
 if full_comp
-  sDFull.grid = createGrid(gMin, gMax, N);
-  sDFull.dynSys = Quad4DCAvoid(zeros(4,1), aMax, bMax);
-  sDFull.uMode = uMode;
-  sDFull.dMode = dMode;
+  filename = 'reconSC_test.mat';
   
-  data0 = shapeRectangleByCorners(sDFull.grid, tarLower, tarUpper);
-  
-  EAFull.visualize = true;
-  EAFull.plotData.plotDims = [1 0 1 0];
-  EAFull.plotData.projpt = vslice;
-  
-  % Time vector (avoid using too many time-steps to save memory...)
-  dt = 0.05;
-  tMax = 1;
-  tau = 0:dt:tMax;
-  
-  dataFull = HJIPDE_solve(data0, tau, sDFull, 'zero', EAFull);
+  if exist(filename, 'file')
+    load(filename)
+  else
+    sDFull.grid = createGrid(gMin, gMax, N);
+    sDFull.dynSys = Quad4DCAvoid(zeros(4,1), aMax, bMax);
+    sDFull.uMode = uMode;
+    sDFull.dMode = dMode;
+    
+    data0 = shapeRectangleByCorners(sDFull.grid, tarLower, tarUpper);
+    
+    EAFull.visualize = true;
+    EAFull.plotData.plotDims = [1 0 1 0];
+    EAFull.plotData.projpt = vslice;
+    
+    % Time vector (avoid using too many time-steps to save memory...)
+    dt = 0.05;
+    tMax = 1;
+    tau = 0:dt:tMax;
+    
+    dataFull = HJIPDE_solve(data0, tau, sDFull, 'zero', EAFull);
+    
+    save(filename, 'sDFull', 'dataFull', '-v7.3')
+  end
   
   [g2D, RSTube2D] = proj(sDFull.grid, dataFull(:,:,:,:,end), [0 1 0 1], vslice);
   figure
