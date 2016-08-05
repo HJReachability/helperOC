@@ -20,6 +20,8 @@ function [data, tau, extraOuts] = ...
 %     .compRegion: unused for now (meant to limit computation region)
 %     .visualize:  set to true to visualize reachable set
 %     .plotData:   information required to plot the data (need to fill in)
+%     .deleteLastPlot: 
+%         set to true to delete previous plot before displaying next one
 %     .stopInit:   stop the computation once the reachable set includes the
 %                  initial state
 %     .stopSet:    stops computation when reachable set includes another
@@ -98,6 +100,12 @@ if isfield(extraArgs, 'visualize') && extraArgs.visualize
   else
     plotDims = ones(schemeData.grid.dim, 1);
     projpt = [];
+  end
+  
+  if isfield(extraArgs, 'deleteLastPlot')
+    deleteLastPlot = extraArgs.deleteLastPlot;
+  else
+    deleteLastPlot = false;
   end
   
   f = figure;
@@ -277,6 +285,10 @@ for i = istart:length(tau)
     
     % Visualize the reachable set
     figure(f)
+    
+    if deleteLastPlot && isfield(extraOuts, 'hT')
+      delete(extraOuts.hT);
+    end
     
     if projDims == 0
       extraOuts.hT = visSetIm(schemeData.grid, data(colons{:}, i), ...
