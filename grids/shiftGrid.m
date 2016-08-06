@@ -16,10 +16,19 @@ if ~iscolumn(shiftAmount)
   shiftAmount = shiftAmount';
 end
 
+% Dimensionality of grid
+gShift.dim = gIn.dim;
+
 %% Shift the grid
-gShift.xs = gIn.xs;
+gShift.xs = cell(gShift.dim, 1);
+gShift.vs = cell(gShift.dim, 1);
+gShift.min = zeros(gShift.dim, 1);
+gShift.max = zeros(gShift.dim, 1);
 for i = 1:length(shiftAmount)
   gShift.xs{i} = gIn.xs{i} + shiftAmount(i);
+  gShift.min(i) = min(gShift.xs{i}(:));
+  gShift.max(i) = max(gShift.xs{i}(:));
+  gShift.vs{i} = unique(gShift.xs{i}(:));
 end
 
 end
