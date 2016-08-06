@@ -1,7 +1,7 @@
 function gShift = shiftGrid(gIn, shiftAmount)
 % function g2D = shift2DGrid(g2D, shiftAmount)
 %
-% Shifts a 2D grid g2D by the amount shiftAmount. The result may no longer
+% Shifts a grid by the amount shiftAmount. The result may no longer
 % be a valid grid structure, but is still sufficient for plotting
 %
 % Mo Chen, 2015-10-20

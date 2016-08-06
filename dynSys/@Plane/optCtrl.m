@@ -1,4 +1,4 @@
-function uOpt = optCtrl(obj, t, y, deriv, uMode, ~)
+function uOpt = optCtrl(obj, ~, y, deriv, uMode, ~)
 % uOpt = optCtrl(obj, t, y, deriv, uMode, dMode, MIEdims)
 
 %% Input processing
