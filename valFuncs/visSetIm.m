@@ -18,7 +18,7 @@ function h = visSetIm(g, data, color, level, sliceDim, applyLight)
 % Mo Chen, 2016-05-12
 
 %% Default parameters and input check
-if g.dim ~= numDims(data)
+if g.dim ~= numDims(data) && g.dim+1 ~= numDims(data)
   error('Grid dimension is inconsistent with data dimension!')
 end
 
@@ -40,7 +40,36 @@ if nargin < 6
   applyLight = true;
 end
 
-%% Displays level set depending on dimension of grid and data
+%%
+if g.dim == numDims(data)
+  % Visualize a single set
+  h = visSetIm_single(g, data, color, level, sliceDim, applyLight);
+else
+  dataSize = size(data);
+  numSets = dataSize(end);
+  h = cell(numSets, 1);
+  colons = repmat({':'}, 1, g.dim);
+  
+  for i = 1:numSets
+    if i > 4
+      applyLight = false;
+    end
+    
+    h{i} = visSetIm_single(g, data(colons{:},i), color, level, sliceDim, ...
+      applyLight);
+
+    drawnow;
+  end
+end
+
+
+end
+
+%% Visualize a single set
+function h = visSetIm_single(g, data, color, level, sliceDim, applyLight)
+% h = visSetIm_single(g, data, color, level, applyLight)
+%     Displays level set depending on dimension of grid and data
+
 switch g.dim
   case 1
     h = plot(g.xs{1}, data, '-', 'color', color);
@@ -56,7 +85,6 @@ switch g.dim
   case 4
     h = visSetIm4D(g, data, color, level, sliceDim, applyLight);
 end
-
 end
 
 %% 3D Visualization
