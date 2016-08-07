@@ -25,6 +25,7 @@ if iscell(deriv)
 
   for i = 1:obj.nx
     uOpt{i} = s*obj.vMax*uOpt{i} ./ denom;
+    uOpt{i}(denom == 0) = 0;
   end
 
 else
@@ -33,8 +34,12 @@ else
   end
   denom = sqrt(denom);
   
+  if denom > 0
   for i = 1:obj.nx
     uOpt(i) = s*obj.vMax*uOpt(i) ./ denom;
+  end
+  else
+    uOpt = zeros(obj.nx, 1);
   end
 end
 
