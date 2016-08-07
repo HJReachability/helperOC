@@ -212,6 +212,10 @@ for i = istart:length(tau)
     [tNow, y] = feval(integratorFunc, schemeFunc, [tNow tau(i)], y, ...
       integratorOptions, schemeData);
     
+    if any(isnan(y))
+      keyboard
+    end
+    
     % Min with zero
     if strcmp(minWith, 'zero')
       y = min(y, yLast);
