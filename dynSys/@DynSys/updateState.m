@@ -1,5 +1,5 @@
 function x1 = updateState(obj, u, T, x0, d)
-% function x1 = updateState(obj, u, T, x0, d)
+% x1 = updateState(obj, u, T, x0, d)
 % Updates state based on control
 %
 % Inputs:   obj - current quardotor object

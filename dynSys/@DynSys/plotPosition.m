@@ -1,4 +1,4 @@
-function plotPosition(obj, color, arrowSize)
+function plotPosition(obj, color, arrowLength)
 % function plotPosition(obj, color)
 %
 % Plots the current state and the trajectory of the quadrotor
@@ -9,23 +9,23 @@ function plotPosition(obj, color, arrowSize)
 % Mo Chen, 2015-06-21
 % Modified: Mo Chen, 2015-10-20
 
-if nargin < 3
-  arrowSize = 1;
+if nargin < 1
+  color = 'k';
+end
+
+if nargin < 2
+  arrowLength = 0.1;
 end
 
 %% Get position and velocity
 [p, phist] = obj.getPosition;
 v = obj.getVelocity;
+v = v/norm(v);
 
 %% Plot position trajectory
 if isempty(obj.hpxpyhist) || ~isvalid(obj.hpxpyhist)
-  % If no graphics handle has been created, create it. Use custom color
-  % if provided.
-  if nargin<2
-    obj.hpxpyhist = plot(phist(1,:), phist(2,:), ':'); 
-  else
-    obj.hpxpyhist = plot(phist(1,:), phist(2,:), ':', 'color', color); 
-  end
+  % If no graphics handle has been created, create it.
+  obj.hpxpyhist = plot(phist(1,:), phist(2,:), '.', 'color', color);
   hold on
 else
   % Otherwise, simply update the graphics handles
@@ -37,13 +37,8 @@ end
 if isempty(obj.hpxpy) || ~isvalid(obj.hpxpy)
   % If no graphics handle has been created, create it with the specified
   % color. Use default color if no color is provided.
-  if nargin<2
-    obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'o', 'MaxHeadSize', ...
-      arrowSize, 'ShowArrowHead', 'on');
-  else
-    obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'o', 'MaxHeadSize', ...
-      arrowSize, 'ShowArrowHead', 'on', 'color', color);
-  end
+  obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'ShowArrowHead', ...
+    'on', 'AutoScaleFactor', arrowLength);
   hold on
   
   obj.hpxpy.Color = obj.hpxpyhist.Color;
