@@ -1,4 +1,4 @@
-function plotPosition(obj, color)
+function plotPosition(obj, color, arrowSize)
 % function plotPosition(obj, color)
 %
 % Plots the current state and the trajectory of the quadrotor
@@ -8,6 +8,10 @@ function plotPosition(obj, color)
 %
 % Mo Chen, 2015-06-21
 % Modified: Mo Chen, 2015-10-20
+
+if nargin < 3
+  arrowSize = 1;
+end
 
 %% Get position and velocity
 [p, phist] = obj.getPosition;
@@ -34,11 +38,11 @@ if isempty(obj.hpxpy) || ~isvalid(obj.hpxpy)
   % If no graphics handle has been created, create it with the specified
   % color. Use default color if no color is provided.
   if nargin<2
-    obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'o', 'MaxHeadSize', 2, ...
-      'ShowArrowHead', 'on');
+    obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'o', 'MaxHeadSize', ...
+      arrowSize, 'ShowArrowHead', 'on');
   else
-    obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'o', 'MaxHeadSize', 2, ...
-      'ShowArrowHead', 'on', 'color', color);
+    obj.hpxpy = quiver(p(1), p(2), v(1), v(2), 'o', 'MaxHeadSize', ...
+      arrowSize, 'ShowArrowHead', 'on', 'color', color);
   end
   hold on
   

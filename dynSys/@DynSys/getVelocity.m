@@ -9,12 +9,12 @@ end
 
 % Plane is a special case, since speed is one of the controls
 if isa(obj, 'Plane')
-  if isempty(obj.u)
-    v = mean(obj.vrange);
-    vhist = mean(obj.vrange);    
-  else
+  v = mean(obj.vrange);
+  vhist = mean(obj.vrange);
+  
+  if ~isempty(obj.u)
     v = obj.u(1);
-    vhist = obj.uhist(1,:);    
+    vhist = [vhist obj.uhist(1,:)];
   end
 end
 
