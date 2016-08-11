@@ -9,11 +9,11 @@ function plotPosition(obj, color, arrowLength)
 % Mo Chen, 2015-06-21
 % Modified: Mo Chen, 2015-10-20
 
-if nargin < 1
+if nargin < 2
   color = 'k';
 end
 
-if nargin < 2
+if nargin < 3
   arrowLength = 0.1;
 end
 
