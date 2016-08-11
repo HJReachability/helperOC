@@ -22,6 +22,8 @@ function [data, tau, extraOuts] = ...
 %     .plotData:   information required to plot the data (need to fill in)
 %     .deleteLastPlot: 
 %         set to true to delete previous plot before displaying next one
+%     .fig_filename:
+%         provide this to save the figures (requires export_fig package)
 %     .stopInit:   stop the computation once the reachable set includes the
 %                  initial state
 %     .stopSet:    stops computation when reachable set includes another
@@ -317,6 +319,10 @@ for i = istart:length(tau)
     end
     title(['t = ' num2str(tNow)])
     drawnow;
+    
+    if isfield(extraArgs, 'fig_filename')
+      export_fig(sprintf('%s_%d', extraArgs.fig_filename, i), '-png')
+    end
   end
   
   %% Save the results if needed
