@@ -1,4 +1,4 @@
-function h = plotDisk(center, radius, varargin)
+function [h, x, y] = plotDisk(center, radius, h, varargin)
 % h = plotDisk(center, radius, varargin)
 %     Plots a disk of some radius around some center (useful for plotting 
 %     collision sets)
