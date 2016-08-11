@@ -11,6 +11,8 @@ t = linspace(0, 2*pi, 100);
 x = radius*cos(t) + center(1);
 y = radius*sin(t) + center(2);
 
-h = plot(x, y, varargin{:});
+if nargout > 1
+  h = plot(x, y, varargin{:});
+end
 
 end
