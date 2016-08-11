@@ -43,10 +43,11 @@ else
   s = -1;
 end
 
-dOpt{3} = s*(obj.dMaxA(1) + obj.dMaxB(1)) * ...
-  deriv{1} ./ sqrt(deriv{1}.^2 + deriv{2}.^2);
-dOpt{4} = s*(obj.dMaxA(1) + obj.dMaxB(1)) * ...
-  deriv{2} ./ sqrt(deriv{1}.^2 + deriv{2}.^2);
+denom = sqrt(deriv{1}.^2 + deriv{2}.^2);
+dOpt{3} = s*(obj.dMaxA(1) + obj.dMaxB(1)) * deriv{1} ./ denom;
+dOpt{3}(denom == 0) = 0;
+dOpt{4} = s*(obj.dMaxA(1) + obj.dMaxB(1)) * deriv{2} ./ denom;
+dOpt{4}(denom == 0) = 0;
 
 %% If input x and deriv were not cells, then convert uOpt back to vector
 if convert_back
