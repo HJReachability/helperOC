@@ -1,4 +1,4 @@
-function d = GaussianDstb(obj)
+function d = uniformDstb(obj)
 % d = GaussianDstb(obj)
 %     Gaussian disturbance for the Plane class
 
