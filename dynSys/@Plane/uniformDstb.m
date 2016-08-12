@@ -1,6 +1,6 @@
 function d = uniformDstb(obj)
-% d = GaussianDstb(obj)
-%     Gaussian disturbance for the Plane class
+% d = uniformDstb(obj)
+%     uniform disturbance for the Plane class
 
 d = zeros(obj.nd, 1);
 
