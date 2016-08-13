@@ -10,8 +10,6 @@ function TTR = TD2TTR(g, TD, tau)
 %
 % Output:
 %   TTR - time-to-reach value function
-%
-% Mo Chen, 2016-04-18
 
 %% Input checking
 if g.dim ~= length(size(TD)) - 1
@@ -25,7 +23,8 @@ if length(tau) ~= size(TD, g.dim+1)
 end
 
 %% Compute TTR
-TTR = nan(g.N');
+large = 1e6;
+TTR = large*ones(g.N');
 
 colons = repmat({':'}, 1, g.dim);
 TTR(TD(colons{:}, 1) <= 0) = 0;
