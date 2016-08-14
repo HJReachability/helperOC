@@ -25,7 +25,8 @@ v = v/norm(v);
 %% Plot position trajectory
 if isempty(obj.hpxpyhist) || ~isvalid(obj.hpxpyhist)
   % If no graphics handle has been created, create it.
-  obj.hpxpyhist = plot(phist(1,:), phist(2,:), '.', 'color', color);
+  obj.hpxpyhist = plot(phist(1,:), phist(2,:), '.', 'color', color, ...
+    'markersize', 1);
   hold on
 else
   % Otherwise, simply update the graphics handles
