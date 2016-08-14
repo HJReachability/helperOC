@@ -321,7 +321,7 @@ for i = istart:length(tau)
     drawnow;
     
     if isfield(extraArgs, 'fig_filename')
-      export_fig(sprintf('%s_%d', extraArgs.fig_filename, i), '-png')
+      export_fig(sprintf('%s%d', extraArgs.fig_filename, i), '-png')
     end
   end
   
