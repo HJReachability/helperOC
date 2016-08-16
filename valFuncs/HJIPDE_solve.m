@@ -26,8 +26,10 @@ function [data, tau, extraOuts] = ...
 %         provide this to save the figures (requires export_fig package)
 %     .stopInit:   stop the computation once the reachable set includes the
 %                  initial state
-%     .stopSet:    stops computation when reachable set includes another
-%                  this set
+%     .stopSetInclude:
+%         stops computation when reachable set includes this set
+%     .stopSetIntersect:
+%         stops computation when reachable set intersects this set
 %     .stopLevel:  level of the stopSet to check the inclusion for. Default
 %                  level is zero.
 %     .targets:    a single target or a list of targets with time
@@ -123,14 +125,24 @@ if isfield(extraArgs, 'stopInit')
 end
 
 % Check validity of stopSet if needed
-if isfield(extraArgs, 'stopSet')
-  if numDims(extraArgs.stopSet) ~= schemeData.grid.dim || ...
-      any(size(extraArgs.stopSet) ~= schemeData.grid.N')
+if isfield(extraArgs, 'stopSet') % For backwards compatibility
+  extraArgs.stopSetInclude = extraArgs.stopSet;
+end
+
+if isfield(extraArgs,'stopSetInclude') || isfield(extraArgs,'stopSetIntersect')
+  if isfield(extraArgs,'stopSetInclude')
+    stopSet = extraArgs.stopSetInclude;
+  else
+    stopSet = extraArgs.stopSetIntersect;
+  end
+  
+  if numDims(stopSet) ~= schemeData.grid.dim || ...
+      any(size(stopSet) ~= schemeData.grid.N')
     error('Inconsistent stopSet dimensions!')
   end
   
   % Extract set of indices at which stopSet is negative
-  setInds = find(extraArgs.stopSet(:) < 0);
+  setInds = find(stopSet(:) < 0);
   
   % Check validity of stopLevel if needed
   if isfield(extraArgs, 'stopLevel')
@@ -261,18 +273,24 @@ for i = istart:length(tau)
   end
   
   %% Stop computation if reachable set contains a "stopSet"
-  if isfield(extraArgs, 'stopSet')
+  if exist('stopSet', 'var')
     temp = data(colons{:}, i);
     dataInds = find(temp(:) <= stopLevel);
     
-    if all(ismember(setInds, dataInds))
+    if isfield(extraArgs, 'stopSetInclude')
+      stopSetFun = @all;
+    else
+      stopSetFun = @any;
+    end
+    
+    if stopSetFun(ismember(setInds, dataInds))
       extraOuts.stoptau = tau(i);
       data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
       tau(i+1:end) = [];
       break
-    end
+    end    
   end
- 
+  
   %% If commanded, visualize the level set.
   if isfield(extraArgs, 'visualize') && extraArgs.visualize
     % Number of dimensions to be plotted and to be projected

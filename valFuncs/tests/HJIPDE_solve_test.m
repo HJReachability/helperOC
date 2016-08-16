@@ -11,8 +11,12 @@ function HJIPDE_solve_test(whatTest)
 %     'obs_stau':  single obstacle over a few time steps
 %     'stopInit':  Test the functionality of stopping reachable set
 %                  computation once it includes the initial state
-%     'stopSet':   Test the functionality of stopping reacahble set
-%                  computation once it contains some set
+%     'stopSetInclude':
+%         Test the functionality of stopping reacahble set computation once it 
+%         contains some set
+%     'stopSetIntersect':
+%         Test the functionality of stopping reacahble set computation once it 
+%         intersects some set
 %     'plotData':  Test the functionality of plotting reachable sets as
 %                  they are being computed
 
@@ -230,24 +234,50 @@ if strcmp(whatTest, 'stopInit')
   end
 end
 
-%% Test the inclusion of initial state
-if strcmp(whatTest, 'stopSet')
-  extraArgs.stopSet = shapeSphere(g, [-1.1 1.1 0], 0.5);
+%% Test the inclusion of some set
+if strcmp(whatTest, 'stopSetInclude')
+  extraArgs.stopSetInclude = shapeSphere(g, [-1.1 1.1 0], 0.5);
   tau = linspace(0, 2, 5);
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
-  [data, tau, extraOuts] = ...
-    HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
+  [data, tau] = HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
   
   % Visualize
   figure;
   for i = 1:numPlots
     subplot(spR, spC, i)
     ind = ceil(i * length(tau) / numPlots);
-    visSetIm(g, extraArgs.stopSet, 'b');
+    visSetIm(g, extraArgs.stopSetInclude, 'b');
+    h = visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
+      ['TD value function, t = ' num2str(tau(ind))]);
+    h.FaceAlpha = 0.6;
+    axis(g.axis)
+    camlight left
+    camlight right
+    drawnow
+  end
+end
+
+%% Test intersection of some set
+if strcmp(whatTest, 'stopSetIntersect')
+  extraArgs.stopSetIntersect = shapeSphere(g, [-1.25 1.25 0], 0.5);
+  tau = linspace(0, 1, 11);
+  
+  numPlots = 4;
+  spC = ceil(sqrt(numPlots));
+  spR = ceil(numPlots / spC);
+  
+  [data, tau] = HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
+  
+  % Visualize
+  figure;
+  for i = 1:numPlots
+    subplot(spR, spC, i)
+    ind = ceil(i * length(tau) / numPlots);
+    visSetIm(g, extraArgs.stopSetIntersect, 'b');
     h = visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
       ['TD value function, t = ' num2str(tau(ind))]);
     h.FaceAlpha = 0.6;
