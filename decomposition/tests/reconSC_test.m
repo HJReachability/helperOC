@@ -7,7 +7,7 @@ end
 
 %% Common parameters
 % Grid
-N = 75;
+N = 31;
 N = N * ones(4,1);
 gMin = [-5; -5; -5; -5];
 gMax = [5; 5; 5; 5];
