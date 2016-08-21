@@ -211,7 +211,7 @@ end
 %% Test the inclusion of initial state
 if strcmp(whatTest, 'stopInit')
   extraArgs.stopInit = [-1.1, -1.1, 0];
-  tau = linspace(0, 2, 5);
+  tau = linspace(0, 2, 50);
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
@@ -225,13 +225,22 @@ if strcmp(whatTest, 'stopInit')
   for i = 1:numPlots
     subplot(spR, spC, i)
     ind = ceil(i * length(tau) / numPlots);
-    visualizeLevelSet(g, data(:,:,:,ind), 'surface', 0, ...
-      ['TD value function, t = ' num2str(tau(ind))]);
+    h = visSetIm(g, data(:,:,:,ind));
+    h.FaceAlpha = 0.5;
     axis(g.axis)
+    title(['TD value function, t = ' num2str(tau(ind))]);
+    
+    hold on
+    plot3(extraArgs.stopInit(1), ...
+      extraArgs.stopInit(2), extraArgs.stopInit(3), '*')
+    
     camlight left
     camlight right
     drawnow
   end
+  
+  val = eval_u(g, data(:,:,:,end), extraArgs.stopInit);
+  fprintf('Value at initial condition is %f\n', val)
 end
 
 %% Test the inclusion of some set
