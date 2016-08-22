@@ -1,4 +1,4 @@
-function vf = reconSC(vfs, range_lower, range_upper)
+function vf = reconSC(vfs, range_lower, range_upper,minOverTime)
 % vf = reconSC(vfs_SC, range_lower, range_upper)
 %
 % Inputs:
@@ -122,7 +122,7 @@ vf.g = createGrid(grid_min, grid_max, N);
 vf.tau = vfs.tau;
 
 %% Expand look-up tables to fill in missing dimensions
-vf.data = -inf([vf.g.N' length(vf.tau)]);
+vf.data = -inf([vf.g.N' length(vf.tau)]); 
 colons = repmat({':'}, 1, vf.g.dim);
 
 for i = 1:num_vfs
@@ -137,4 +137,8 @@ for i = 1:num_vfs
   end
 end
 
+%% If we're just interested in min over time, min over all vf.data
+if minOverTime
+  vf.data = min(vf.data,[],vf.g.dim+1);
+end
 end
