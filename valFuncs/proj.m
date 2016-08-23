@@ -57,6 +57,55 @@ if nargin < 6
   process = true;
 end
 
+%% Project data
+dataDims = numDims(data);
+if dataDims == g.dim
+  [gOut, dataOut] = projSingle(g, data, dims, xs, NOut, process);
+  
+elseif dataDims == g.dim + 1
+  % Project grid
+  gOut = projSingle(g, [], dims, xs, NOut, process);
+  
+  % Project data
+  numTimeSteps = size(data, dataDims);
+  dataOut = zeros([NOut' numTimeSteps]);
+  colons = repmat({':'}, 1, g.dim);
+  for i = 1:numTimeSteps
+    [~, dataOut(colons{:},i)] = ...
+      projSingle(g, data(colons{:},i), dims, xs, NOut, process);
+  end
+else
+  error('Inconsistent input data dimensions!')
+end
+end
+function [gOut, dataOut] = projSingle(g, data, dims, xs, NOut, process)
+% [gOut, dataOut] = proj(g, data, dims, xs, NOut)
+%   Projects data corresponding to the grid g in g.dim dimensions, removing
+%   dimensions specified in dims. If a point is specified, a slice of the
+%   full-dimensional data at the point xs is taken.
+%
+% Inputs:
+%   g       - grid corresponding to input data
+%   data    - input data
+%   dims    - vector of length g.dim specifying dimensions to project
+%                 For example, if g.dim = 4, then dims = [0 0 1 1] would
+%                 project the last two dimensions
+%   xs      - Type of projection (defaults to 'min')
+%       'min':    takes the union across the projected dimensions
+%       'max':    takes the intersection across the projected dimensions
+%       a vector: takes a slice of the data at the point xs
+%   NOut    - number of grid points in output grid (defaults to the same
+%             number of grid points of the original grid in the unprojected
+%             dimensions)
+%   process            - specifies whether to call processGrid to generate
+%                        grid points
+%
+% Outputs:
+%   gOut    - grid corresponding to projected data
+%   dataOut - projected data
+%
+% See proj_test.m
+
 %% Create ouptut grid by keeping dimensions that we are not collapsing
 dims = logical(dims);
 gOut.dim = nnz(~dims);
