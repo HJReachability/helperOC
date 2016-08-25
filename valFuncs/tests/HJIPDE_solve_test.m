@@ -12,10 +12,10 @@ function HJIPDE_solve_test(whatTest)
 %     'stopInit':  Test the functionality of stopping reachable set
 %                  computation once it includes the initial state
 %     'stopSetInclude':
-%         Test the functionality of stopping reacahble set computation once it 
+%         Test the functionality of stopping reacahble set computation once it
 %         contains some set
 %     'stopSetIntersect':
-%         Test the functionality of stopping reacahble set computation once it 
+%         Test the functionality of stopping reacahble set computation once it
 %         intersects some set
 %     'plotData':  Test the functionality of plotting reachable sets as
 %                  they are being computed
@@ -351,5 +351,39 @@ if strcmp(whatTest, 'savedData')
   % Display error
   disp(['Computation from saved data differs from full computation by ' ...
     'an error of ' num2str(sum((data1(:) - data2(:)).^2))])
+end
+
+if strcmp(whatTest, 'stopConverge')
+  % Parameters
+  N = 61*ones(3,1);
+  grid_min = [-25; -20; 0];
+  grid_max = [25; 20; 2*pi];
+  pdDims = 3;
+  
+  va = 5;
+  vb = 5;
+  uMax = 1;
+  dMax = 1;
+  
+  captureRadius = 5;
+  
+  g = createGrid(grid_min, grid_max, N, pdDims);
+  data0 = shapeCylinder(g, 3, [0;0;0], captureRadius);
+  dynSys = DubinsCarCAvoid([0;0;0], uMax, dMax, va, vb); 
+  
+  tMax = 5;
+  dt = 0.01;
+  tau = 0:dt:tMax;
+  
+  schemeData.grid = g;
+  schemeData.dynSys = dynSys;
+  schemeData.uMode = 'max';
+  schemeData.dMode = 'min';
+  
+  extraArgs.stopConverge = true;
+  extraArgs.convergeThreshold = 1e-3;
+  extraArgs.visualize = true;
+  extraArgs.deleteLastPlot = true;
+  data = HJIPDE_solve(data0, tau, schemeData, 'zero', extraArgs);
 end
 end

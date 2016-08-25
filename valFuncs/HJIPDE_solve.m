@@ -20,7 +20,7 @@ function [data, tau, extraOuts] = ...
 %     .compRegion: unused for now (meant to limit computation region)
 %     .visualize:  set to true to visualize reachable set
 %     .plotData:   information required to plot the data (need to fill in)
-%     .deleteLastPlot: 
+%     .deleteLastPlot:
 %         set to true to delete previous plot before displaying next one
 %     .fig_filename:
 %         provide this to save the figures (requires export_fig package)
@@ -38,11 +38,15 @@ function [data, tau, extraOuts] = ...
 %                  targets are time-varying, in case of variational
 %                  inequality for example; data0 can be used to
 %                  specify the target otherwise.
+%     .stopConverge:
+%         set to true to stop the computation when it converges
+%     .convergeThreshold:
+%         Max change in each iteration allowed when checking convergence
 %
-%     .SDModFunc, .SDModParams:  
-%         Function for modifying scheme data every time step given by tau. 
+%     .SDModFunc, .SDModParams:
+%         Function for modifying scheme data every time step given by tau.
 %         Currently this is only used to switch between using optimal control at
-%         every grid point and using maximal control for the SPP project when 
+%         every grid point and using maximal control for the SPP project when
 %         computing FRS using centralized controller
 %
 %     .save_filename, .saveFrequency:
@@ -158,6 +162,16 @@ if isfield(schemeData, 'dynSys')
   schemeData.partialFunc = @genericPartial;
 end
 
+stopConverge = false;
+if isfield(extraArgs, 'stopConverge')
+  stopConverge = extraArgs.stopConverge;
+  if isfield(extraArgs, 'convergeThreshold')
+    convergeThreshold = extraArgs.convergeThreshold;
+  else
+    convergeThreshold = 1e-5;
+  end
+end
+
 %% SchemeFunc and SchemeData
 schemeFunc = @termLaxFriedrichs;
 % Extract accuracy parameter o/w set default accuracy
@@ -188,8 +202,8 @@ if numDims(data0) == schemeData.grid.dim
 elseif numDims(data0) == schemeData.grid.dim + 1
   % Continue an old computation
   data(colons{:}, 1:data0size(end)) = data0;
-
-  % Start at custom starting index if specified  
+  
+  % Start at custom starting index if specified
   if isfield(extraArgs, 'istart')
     istart = extraArgs.istart;
   else
@@ -256,6 +270,11 @@ for i = istart:length(tau)
     end
   end
   
+  if stopConverge
+    change = max(abs(y - y0(:)));
+    fprintf('Max change since last iteration: %f\n', change)
+  end
+  
   % Reshape value function
   data(colons{:}, i) = reshape(y, schemeData.grid.shape);
   
@@ -288,7 +307,14 @@ for i = istart:length(tau)
       data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
       tau(i+1:end) = [];
       break
-    end    
+    end
+  end
+  
+  if stopConverge && change < convergeThreshold
+    extraOuts.stoptau = tau(i);
+    data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
+    tau(i+1:end) = [];
+    break
   end
   
   %% If commanded, visualize the level set.
