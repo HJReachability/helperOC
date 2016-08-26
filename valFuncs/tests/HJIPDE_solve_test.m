@@ -127,6 +127,7 @@ if strcmp(whatTest, 'singleObs')
   
   targets = data0;
   extraArgs.targets = targets;
+  extraArgs.visualize = true;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
@@ -158,6 +159,8 @@ if strcmp(whatTest, 'tvObs')
   
   targets = data0;
   extraArgs.targets = targets;
+  
+  extraArgs.visualize = true;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
