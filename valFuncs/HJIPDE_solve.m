@@ -162,6 +162,7 @@ if isfield(extraArgs, 'visualize') && extraArgs.visualize
   
   % Initialize the figure for visualization  
   f = figure;
+  hold on
   need_light = true;
   
   if strcmp(obsMode, 'static')

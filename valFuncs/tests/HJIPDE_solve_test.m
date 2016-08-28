@@ -302,10 +302,19 @@ end
 
 %% Test the intermediate plotting
 if strcmp(whatTest, 'plotData')
+  tau = linspace(0, 2, 51);
+  
   extraArgs.visualize = true;
-  %   extraArgs.plotData.plotDims = [1, 1, 0];
-  %   extraArgs.plotData.projpt = pi/2;
-  tau = linspace(0, 2, 5);
+  extraArgs.plotData.plotDims = [1, 1, 0];
+  extraArgs.plotData.projpt = -3*pi/4;
+  extraArgs.deleteLastPlot = true;
+  
+  % Moving obstacles
+  obstacles = zeros([size(data0) length(tau)]);
+  for i = 1:length(tau)
+    obstacles(:,:,:,i) = shapeCylinder(g, 3, [1.5; 1.5; 0], i/length(tau)*R);
+  end
+  extraArgs.obstacles = obstacles;
   
   numPlots = 4;
   spC = ceil(sqrt(numPlots));
