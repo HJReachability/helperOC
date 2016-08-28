@@ -69,10 +69,12 @@ elseif dataDims == g.dim + 1
   % Project data
   numTimeSteps = size(data, dataDims);
   dataOut = zeros([NOut' numTimeSteps]);
-  colons = repmat({':'}, 1, g.dim);
+  colonsIn = repmat({':'}, 1, g.dim);
+  
+  colonsOut = repmat({':'}, 1, gOut.dim);
   for i = 1:numTimeSteps
-    [~, dataOut(colons{:},i)] = ...
-      projSingle(g, data(colons{:},i), dims, xs, NOut, process);
+    [~, dataOut(colonsOut{:},i)] = ...
+      projSingle(g, data(colonsIn{:},i), dims, xs, NOut, process);
   end
 else
   error('Inconsistent input data dimensions!')
