@@ -168,6 +168,15 @@ if isfield(extraArgs, 'visualize') && extraArgs.visualize
   if strcmp(obsMode, 'static')
     visSetIm(g, obstacle_i, 'k');
   end
+  
+  if isfield(extraArgs, 'stopInit') 
+    projectedInit = extraArgs.stopInit(logical(plotDims));
+    if nnz(plotDims) == 2
+      plot(projectedInit(1), projectedInit(2), 'b*')
+    elseif nnz(plotDims) == 3
+      plot3(projectedInit(1), projectedInit(2), projectedInit(3), 'b*')
+    end
+  end
 end
 
 % Extract cdynamical system if needed

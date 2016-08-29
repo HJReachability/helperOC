@@ -220,6 +220,10 @@ if strcmp(whatTest, 'stopInit')
   spC = ceil(sqrt(numPlots));
   spR = ceil(numPlots / spC);
   
+  extraArgs.visualize = true;
+  extraArgs.deleteLastPlot = true;
+  extraArgs.plotData.plotDims = [1 1 0];
+  extraArgs.plotData.projpt = -pi;
   [data, tau, extraOuts] = ...
     HJIPDE_solve(data0, tau, schemeData, 'none', extraArgs);
   
