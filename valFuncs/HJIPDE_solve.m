@@ -84,6 +84,7 @@ gDim = g.dim;
 colons = repmat({':'}, 1, gDim);
 
 
+
 %% Extract the information from extraargs
 % Extract the information about obstacles
 obsMode = 'none';
@@ -95,9 +96,11 @@ if isfield(extraArgs, 'obstacles')
     obstacle_i = obstacles;
   elseif numDims(obstacles) == gDim + 1
     obsMode = 'time-varying';
+    obstacle_i = obstacles(colons{:}, 1);
   else
     error('Inconsistent obstacle dimensions!')
   end
+  data0 = max(data0, -obstacle_i);
 end
 
 % Extract the information about targets
