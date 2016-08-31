@@ -18,6 +18,11 @@ function h = visSetIm(g, data, color, level, sliceDim, applyLight)
 % Mo Chen, 2016-05-12
 
 %% Default parameters and input check
+if isempty(g)
+  N = size(data)';
+  g = createGrid(ones(numDims(data), 1), N, N);
+end
+
 if g.dim ~= numDims(data) && g.dim+1 ~= numDims(data)
   error('Grid dimension is inconsistent with data dimension!')
 end

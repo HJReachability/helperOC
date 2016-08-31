@@ -20,7 +20,7 @@ function [data, tau, extraOuts] = ...
 %     .compRegion: unused for now (meant to limit computation region)
 %     .visualize:  set to true to visualize reachable set
 %     .plotData:   information required to plot the data (need to fill in)
-%     .deleteLastPlot: 
+%     .deleteLastPlot:
 %         set to true to delete previous plot before displaying next one
 %     .fig_filename:
 %         provide this to save the figures (requires export_fig package)
@@ -38,11 +38,15 @@ function [data, tau, extraOuts] = ...
 %                  targets are time-varying, in case of variational
 %                  inequality for example; data0 can be used to
 %                  specify the target otherwise.
+%     .stopConverge:
+%         set to true to stop the computation when it converges
+%     .convergeThreshold:
+%         Max change in each iteration allowed when checking convergence
 %
-%     .SDModFunc, .SDModParams:  
-%         Function for modifying scheme data every time step given by tau. 
+%     .SDModFunc, .SDModParams:
+%         Function for modifying scheme data every time step given by tau.
 %         Currently this is only used to switch between using optimal control at
-%         every grid point and using maximal control for the SPP project when 
+%         every grid point and using maximal control for the SPP project when
 %         computing FRS using centralized controller
 %
 %     .save_filename, .saveFrequency:
@@ -75,14 +79,28 @@ end
 
 extraOuts = [];
 small = 1e-4;
-colons = repmat({':'}, 1, schemeData.grid.dim);
+g = schemeData.grid;
+gDim = g.dim;
+colons = repmat({':'}, 1, gDim);
+
+
 
 %% Extract the information from extraargs
 % Extract the information about obstacles
+obsMode = 'none';
 if isfield(extraArgs, 'obstacles')
   obstacles = extraArgs.obstacles;
-else
-  obstacles = [];
+  
+  if numDims(obstacles) == gDim
+    obsMode = 'static';
+    obstacle_i = obstacles;
+  elseif numDims(obstacles) == gDim + 1
+    obsMode = 'time-varying';
+    obstacle_i = obstacles(colons{:}, 1);
+  else
+    error('Inconsistent obstacle dimensions!')
+  end
+  data0 = max(data0, -obstacle_i);
 end
 
 % Extract the information about targets
@@ -90,36 +108,10 @@ if isfield(extraArgs, 'targets')
   targets = extraArgs.targets;
 end
 
-if isfield(extraArgs, 'visualize') && extraArgs.visualize
-  % Extract the information about plotData
-  if isfield(extraArgs, 'plotData')
-    % Dimensions to visualize
-    % It will be an array of 1s and 0s with 1s means that dimension should
-    % be plotted.
-    plotDims = extraArgs.plotData.plotDims;
-    % Points to project other dimensions at. There should be an entry point
-    % corresponding to each 0 in plotDims.
-    projpt = extraArgs.plotData.projpt;
-    % Initialize the figure for visualization
-  else
-    plotDims = ones(schemeData.grid.dim, 1);
-    projpt = [];
-  end
-  
-  if isfield(extraArgs, 'deleteLastPlot')
-    deleteLastPlot = extraArgs.deleteLastPlot;
-  else
-    deleteLastPlot = false;
-  end
-  
-  f = figure;
-  need_light = true;
-end
-
 % Check validity of stopInit if needed
 if isfield(extraArgs, 'stopInit')
   if ~isvector(extraArgs.stopInit) || ...
-      schemeData.grid.dim ~= length(extraArgs.stopInit)
+      gDim ~= length(extraArgs.stopInit)
     error('stopInit must be a vector of length g.dim!')
   end
 end
@@ -136,8 +128,7 @@ if isfield(extraArgs,'stopSetInclude') || isfield(extraArgs,'stopSetIntersect')
     stopSet = extraArgs.stopSetIntersect;
   end
   
-  if numDims(stopSet) ~= schemeData.grid.dim || ...
-      any(size(stopSet) ~= schemeData.grid.N')
+  if numDims(stopSet) ~= gDim || any(size(stopSet) ~= g.N')
     error('Inconsistent stopSet dimensions!')
   end
   
@@ -152,10 +143,59 @@ if isfield(extraArgs,'stopSetInclude') || isfield(extraArgs,'stopSetIntersect')
   end
 end
 
+%% Visualization
+if isfield(extraArgs, 'visualize') && extraArgs.visualize
+  % Extract the information about plotData
+  plotDims = ones(gDim, 1);
+  projpt = [];  
+  if isfield(extraArgs, 'plotData')
+    % Dimensions to visualize
+    % It will be an array of 1s and 0s with 1s means that dimension should
+    % be plotted.
+    plotDims = extraArgs.plotData.plotDims;
+    % Points to project other dimensions at. There should be an entry point
+    % corresponding to each 0 in plotDims.
+    projpt = extraArgs.plotData.projpt;
+  end
+  
+  deleteLastPlot = false;
+  if isfield(extraArgs, 'deleteLastPlot')
+    deleteLastPlot = extraArgs.deleteLastPlot;
+  end
+  
+  % Initialize the figure for visualization  
+  f = figure;
+  hold on
+  need_light = true;
+  
+  if strcmp(obsMode, 'static')
+    visSetIm(g, obstacle_i, 'k');
+  end
+  
+  if isfield(extraArgs, 'stopInit') 
+    projectedInit = extraArgs.stopInit(logical(plotDims));
+    if nnz(plotDims) == 2
+      plot(projectedInit(1), projectedInit(2), 'b*')
+    elseif nnz(plotDims) == 3
+      plot3(projectedInit(1), projectedInit(2), projectedInit(3), 'b*')
+    end
+  end
+end
+
 % Extract cdynamical system if needed
 if isfield(schemeData, 'dynSys')
   schemeData.hamFunc = @genericHam;
   schemeData.partialFunc = @genericPartial;
+end
+
+stopConverge = false;
+if isfield(extraArgs, 'stopConverge')
+  stopConverge = extraArgs.stopConverge;
+  if isfield(extraArgs, 'convergeThreshold')
+    convergeThreshold = extraArgs.convergeThreshold;
+  else
+    convergeThreshold = 1e-5;
+  end
 end
 
 %% SchemeFunc and SchemeData
@@ -172,24 +212,23 @@ dissType = 'global';
   getNumericalFuncs(dissType, accuracy);
 
 %% Time integration
-integratorOptions = odeCFLset('factorCFL', 0.8, 'stats', 'on', ...
-  'singleStep', 'on');
+integratorOptions = odeCFLset('factorCFL', 0.8, 'singleStep', 'on');
 
 startTime = cputime;
 
 %% Initialize PDE solution
 data0size = size(data0);
-data = zeros([data0size(1:schemeData.grid.dim) length(tau)]);
+data = zeros([data0size(1:gDim) length(tau)]);
 
-if numDims(data0) == schemeData.grid.dim
+if numDims(data0) == gDim
   % New computation
   data(colons{:}, 1) = data0;
   istart = 2;
-elseif numDims(data0) == schemeData.grid.dim + 1
+elseif numDims(data0) == gDim + 1
   % Continue an old computation
   data(colons{:}, 1:data0size(end)) = data0;
-
-  % Start at custom starting index if specified  
+  
+  % Start at custom starting index if specified
   if isfield(extraArgs, 'istart')
     istart = extraArgs.istart;
   else
@@ -200,6 +239,7 @@ else
 end
 
 for i = istart:length(tau)
+  fprintf('tau(i) = %f\n', tau(i))
   %% Variable schemeData
   if isfield(extraArgs, 'SDModFunc')
     if isfield(extraArgs, 'SDModParams')
@@ -223,6 +263,7 @@ for i = istart:length(tau)
       yLast = y;
     end
     
+    fprintf('  Computing [%f %f]...\n', tNow, tau(i))
     [tNow, y] = feval(integratorFunc, schemeFunc, [tNow tau(i)], y, ...
       integratorOptions, schemeData);
     
@@ -237,7 +278,7 @@ for i = istart:length(tau)
     
     % Min with targets
     if isfield(extraArgs, 'targets')
-      if numDims(targets) == schemeData.grid.dim
+      if numDims(targets) == gDim
         y = min(y, targets(:));
       else
         target_i = targets(colons{:}, i);
@@ -247,26 +288,28 @@ for i = istart:length(tau)
     
     % "Mask" using obstacles
     if isfield(extraArgs, 'obstacles')
-      if numDims(obstacles) == schemeData.grid.dim
-        y = max(y, -obstacles(:));
-      else
+      if strcmp(obsMode, 'time-varying')
         obstacle_i = obstacles(colons{:}, i);
-        y = max(y, -obstacle_i(:));
       end
+      y = max(y, -obstacle_i(:));
     end
   end
   
-  % Reshape value function
-  data(colons{:}, i) = reshape(y, schemeData.grid.shape);
+  if stopConverge
+    change = max(abs(y - y0(:)));
+    fprintf('Max change since last iteration: %f\n', change)
+  end
   
+  % Reshape value function
+  data(colons{:}, i) = reshape(y, g.shape);
+  data_i = data(colons{:}, i);
   %% If commanded, stop the reachable set computation once it contains
   % the initial state.
   if isfield(extraArgs, 'stopInit')
-    initValue = ...
-      eval_u(schemeData.grid, data(colons{:}, i), extraArgs.stopInit);
+    initValue = eval_u(g, data_i, extraArgs.stopInit);
     if ~isnan(initValue) && initValue <= 0
       extraOuts.stoptau = tau(i);
-      data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
+      data(colons{:}, i+1:size(data, gDim+1)) = [];
       tau(i+1:end) = [];
       break
     end
@@ -285,10 +328,17 @@ for i = istart:length(tau)
     
     if stopSetFun(ismember(setInds, dataInds))
       extraOuts.stoptau = tau(i);
-      data(colons{:}, i+1:size(data, schemeData.grid.dim+1)) = [];
+      data(colons{:}, i+1:size(data, gDim+1)) = [];
       tau(i+1:end) = [];
       break
-    end    
+    end
+  end
+  
+  if stopConverge && change < convergeThreshold
+    extraOuts.stoptau = tau(i);
+    data(colons{:}, i+1:size(data, gDim+1)) = [];
+    tau(i+1:end) = [];
+    break
   end
   
   %% If commanded, visualize the level set.
@@ -298,42 +348,52 @@ for i = istart:length(tau)
     projDims = length(projpt);
     
     % Basic Checks
-    if(length(plotDims) ~= schemeData.grid.dim || ...
-        projDims ~= (schemeData.grid.dim - pDims))
+    if(length(plotDims) ~= gDim || projDims ~= (gDim - pDims))
       error('Mismatch between plot and grid dimensions!');
     end
     
-    if (pDims >= 4 || schemeData.grid.dim > 4)
+    if (pDims >= 4 || gDim > 4)
       error('Currently plotting up to 3D is supported!');
     end
     
     % Visualize the reachable set
     figure(f)
     
-    if deleteLastPlot && isfield(extraOuts, 'hT')
-      delete(extraOuts.hT);
+    if deleteLastPlot 
+      if isfield(extraOuts, 'hT')
+        delete(extraOuts.hT);
+      end
+      
+      if isfield(extraOuts, 'hO') && strcmp(obsMode, 'time-varying')
+        delete(extraOuts.hO);
+      end
     end
     
     if projDims == 0
-      extraOuts.hT = visSetIm(schemeData.grid, data(colons{:}, i), ...
-        'r', 0, [], false);
+      gPlot = g;
+      dataPlot = data_i;
       
-      if need_light && schemeData.grid.dim == 3
-        camlight left
-        camlight right
-        need_light = false;
+      if strcmp(obsMode, 'time-varying')
+        obsPlot = obstacle_i;
       end
     else
-      [gProj, dataProj] = proj(schemeData.grid, data(colons{:}, i), ...
-        1-plotDims, projpt);
-      extraOuts.hT = visSetIm(gProj, dataProj, 'r', 0, [], false);
+      [gPlot, dataPlot] = proj(g, data_i, 1-plotDims, projpt);
       
-      if need_light && gProj.dim == 3
-        camlight left
-        camlight right
-        need_light = false;
+      if strcmp(obsMode, 'time-varying')
+        [~, obsPlot] = proj(g, obstacle_i, 1-plotDims, projpt);
       end
-      
+    end
+    
+    extraOuts.hT = visSetIm(gPlot, dataPlot, 'r', 0, [], false);
+    
+    if strcmp(obsMode, 'time-varying')
+      extraOuts.hO = visSetIm(gPlot, obsPlot, 'k', 0, [], false);
+    end
+    
+    if need_light && gDim == 3
+      camlight left
+      camlight right
+      need_light = false;
     end
     title(['t = ' num2str(tNow)])
     drawnow;
