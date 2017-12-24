@@ -1,16 +1,16 @@
-function [gOut, dataOut] = proj(g, data, dims, xs, NOut, process)
+function [gOut, dataOut] = proj(g, data, dimsToRemove, xs, NOut, process)
 % [gOut, dataOut] = proj(g, data, dims, xs, NOut)
 %   Projects data corresponding to the grid g in g.dim dimensions, removing
 %   dimensions specified in dims. If a point is specified, a slice of the
 %   full-dimensional data at the point xs is taken.
 %
 % Inputs:
-%   g       - grid corresponding to input data
-%   data    - input data
-%   dims    - vector of length g.dim specifying dimensions to project
+%   g            - grid corresponding to input data
+%   data         - input data
+%   dimsToRemove - vector of length g.dim specifying dimensions to project
 %                 For example, if g.dim = 4, then dims = [0 0 1 1] would
 %                 project the last two dimensions
-%   xs      - Type of projection (defaults to 'min')
+%   xs           - Type of projection (defaults to 'min')
 %       'min':    takes the union across the projected dimensions
 %       'max':    takes the intersection across the projected dimensions
 %       a vector: takes a slice of the data at the point xs
@@ -27,11 +27,11 @@ function [gOut, dataOut] = proj(g, data, dims, xs, NOut, process)
 % See proj_test.m
 
 %% Input checking
-if length(dims) ~= g.dim
+if length(dimsToRemove) ~= g.dim
   error('Dimensions are inconsistent!')
 end
 
-if nnz(~dims) == g.dim
+if nnz(~dimsToRemove) == g.dim
   gOut = g;
   dataOut = data;
   warning('Input and output dimensions are the same!')
@@ -45,12 +45,12 @@ end
 
 % If a slice is requested, make sure the specified point has the correct
 % dimension
-if isnumeric(xs) && length(xs) ~= nnz(dims)
+if isnumeric(xs) && length(xs) ~= nnz(dimsToRemove)
   error('Dimension of xs and dims do not match!')
 end
 
 if nargin < 5
-  NOut = g.N(~dims);
+  NOut = g.N(~dimsToRemove);
 end
 
 if nargin < 6
@@ -64,11 +64,11 @@ end
 
 %% Project data
 if dataDims == g.dim
-  [gOut, dataOut] = projSingle(g, data, dims, xs, NOut, process);
+  [gOut, dataOut] = projSingle(g, data, dimsToRemove, xs, NOut, process);
   
 else % dataDims == g.dim + 1
   % Project grid
-  gOut = projSingle(g, [], dims, xs, NOut, process);
+  gOut = projSingle(g, [], dimsToRemove, xs, NOut, process);
   
   % Project data
   numTimeSteps = size(data, dataDims);
@@ -78,7 +78,7 @@ else % dataDims == g.dim + 1
   colonsOut = repmat({':'}, 1, gOut.dim);
   for i = 1:numTimeSteps
     [~, dataOut(colonsOut{:},i)] = ...
-      projSingle(g, data(colonsIn{:},i), dims, xs, NOut, process);
+      projSingle(g, data(colonsIn{:},i), dimsToRemove, xs, NOut, process);
   end
 end
 
