@@ -1,4 +1,4 @@
-classdef Quad10D < DynSys
+classdef Quad8D < DynSys
   properties
     uMin        % Control bounds (3x1 vector)
     uMax
@@ -12,6 +12,7 @@ classdef Quad10D < DynSys
     n0 = 10     % Angular dynamics parameters
     d1 = 8
     d0 = 10
+    g = 9.81
     
     m = 1.3     % Mass
     
@@ -20,7 +21,7 @@ classdef Quad10D < DynSys
   end
   
   methods
-    function obj = Quad10D(x, uMin, uMax, dMin, dMax, dims)
+    function obj = Quad8D(x, uMin, uMax, dMin, dMax, dims)
       % obj = Quad10D(x, uMin, uMax)
       %     Constructor for a 8D quadrotor
       %

@@ -18,7 +18,7 @@ end
 
 dOpt = cell(obj.nd, 1);
 
-%% Optimal control
+%% Optimal disturbance
 if strcmp(dMode, 'max')
   if any(obj.dims == 1)
     dOpt{1} = (deriv{obj.dims==1}>=0)*obj.dMax(1) + ...

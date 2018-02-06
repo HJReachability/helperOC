@@ -472,7 +472,7 @@ for i = istart:length(tau)
       error('Mismatch between plot and grid dimensions!');
     end
     
-    if (pDims > 4 || gDim > 4)
+    if (pDims > 4)
       error('Currently plotting up to 3D is supported!');
     end
     
