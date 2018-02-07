@@ -1,5 +1,5 @@
 function [data, tau, extraOuts] = ...
-  HJIPDE_solve(data0, tau, schemeData, minWith, extraArgs)
+  HJIPDE_solve(data0, tau, schemeData, compMethod, extraArgs)
 % [data, tau, extraOuts] = ...
 %   HJIPDE_solve(data0, tau, schemeData, minWith, extraargs)
 %     Solves HJIPDE with initial conditions data0, at times tau, and with
@@ -12,11 +12,12 @@ function [data, tau, extraOuts] = ...
 %   tau        - list of computation times
 %   schemeData - problem parameters passed into the Hamiltonian function
 %                  .grid: grid (required!)
-%   minWith    - set to 'zero' to do min with zero
-%              - set to 'none' to compute reachable set (not tube)
-%              - set to 'minVOverTime' to do min with previous data
-%              - set to 'minVWithTarget' to do min with original data
-%              - set to 'maxVOverTime' to do max over time
+%   compMethod - set to 'set' or 'none' to compute reachable set (not tube)
+%              - set to 'minWithZero' or 'zero' to do min with zero
+%              - set to 'minWithTime' to do min with previous data
+%              - set to 'minWithTarget' to do min with the target data
+%              - set to 'maxWithTime' to do max with previous data
+%              - set to 'maxWithTarget' to do max with the target data
 %   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
 %     .obstacles:  a single obstacle or a list of obstacles with time
@@ -79,7 +80,7 @@ if numel(tau) < 2
 end
 
 if nargin < 4
-  minWith = 'zero';
+  compMethod = 'zero';
 end
 
 if nargin < 5
@@ -264,7 +265,7 @@ dissType = 'global';
 [schemeData.dissFunc, integratorFunc, schemeData.derivFunc] = ...
   getNumericalFuncs(dissType, accuracy);
 
-if strcmp(minWith, 'zeroTEST')
+if strcmp(compMethod, 'minWithZero') || strcmp(compMethod, 'zero')
     schemeFunc = @termRestrictUpdate;
     schemeData.innerFunc = @termLaxFriedrichs;
     schemeData.innerData = schemeData;
@@ -347,10 +348,11 @@ for i = istart:length(tau)
   %% Main integration loop to get to the next tau(i)
   while tNow < tau(i) - small
     % Save previous data if needed
-    if strcmp(minWith, 'zero') || strcmp(minWith, 'time')
+    if strcmp(compMethod, 'minWithTime') || ...
+            strcmp(compMethod, 'maxWithTime')
       yLast = y;
     end
-    
+
     if ~quiet
       fprintf('  Computing [%f %f]...\n', tNow, tau(i))
     end
@@ -364,14 +366,21 @@ for i = istart:length(tau)
     
     
     %Tube Computations
-    if strcmp(minWith, 'zero') % Min with zero
-      y = min(y, yLast);
-    elseif strcmp(minWith, 'time') %Min over Time
+%   compMethod - set to 'set' or 'none' to compute reachable set (not tube)
+%              - set to 'minWithZero' or 'zero' to do min with zero
+%              - set to 'minWithTime' to do min with previous data
+%              - set to 'minWithTarget' to do min with the target data
+%              - set to 'maxWithTime' to do max with previous data
+%              - set to 'maxWithTarget' to do max with the target data
+    if strcmp(compMethod, 'minWithTime') %Min over Time
         y = min(y, yLast);
-    elseif strcmp(minWith, 'data0') %Min with data0
-      y = min(y,data0(:));
-    elseif strcmp(minWith, 'maxOverTime')
-      y = max(y,data0(:));
+    elseif strcmp(compMethod, 'maxOverTime')
+        y = max(y, yLast);
+    elseif strcmp(compMethod, 'minWithTarget')
+        y = min(y,data0(:));
+    elseif strcmp(compMethod, 'maxWithTarget') %Min with data0
+        y = max(y,data0(:));
+
     end
     
     % Min with targets
