@@ -36,10 +36,10 @@ switch dim
   case 3
     dx = x{dims==5};
   case 4
-    dx = u{1} + d{4};
+    dx = u{1} + d{3};
   case 5
-    dx = u{2} + d{5};
+    dx = u{2} + d{4};
   otherwise
-    error('Only dimension 1-4 are defined for dynamics of Plane4D!')    
+    error('Only dimension 1-5 are defined for dynamics of Plane5D!')    
 end
 end

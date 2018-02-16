@@ -1,4 +1,4 @@
-classdef Plane4D < DynSys
+classdef Plane5D < DynSys
   properties
     % Angular control bounds
     alphaMax
@@ -14,8 +14,8 @@ classdef Plane4D < DynSys
   end
   
   methods
-    function obj = Plane4D(x, wMax, aRange, dMax, dims)
-      % obj = Plane4D(x, wMax, aRange, dMax)
+    function obj = Plane5D(x, alphaMax, aRange, dMax, dims)
+      % obj = Plane5D(x, wMax, aRange, dMax, dims)
       %     Dynamics of the Plane5D
       %         \dot{x}_1 = x_4 * cos(x_3) + d_1 (x position)
       %         \dot{x}_2 = x_4 * sin(x_3) + d_2 (y position)
@@ -46,7 +46,7 @@ classdef Plane4D < DynSys
       obj.x = x;
       obj.xhist = obj.x;
       
-      obj.wMax = wMax;
+      obj.alphaMax = alphaMax;
       obj.aRange = aRange;
       obj.dMax = dMax;
       
