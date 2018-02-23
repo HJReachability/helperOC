@@ -1,4 +1,4 @@
-function tutorial_test()
+function tutorial()
 % 1. Run Backward Reachable Set (BRS) with a goal
 %     uMode = 'min' <-- goal
 %     minWith = 'none' <-- Set (not tube)
