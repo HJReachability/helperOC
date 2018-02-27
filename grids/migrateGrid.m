@@ -50,6 +50,10 @@ function dataNew = migrateGridSingle(gOld, dataOld, gNew, filler)
 % Output: dataNew    - equivalent data corresponding to new grid structure
 %
 % Mo Chen, 2015-08-27
+if nargin < 4
+  filler = 'max';
+end
+
 
 gNew_xsVec = zeros(prod(gNew.N), gOld.dim);
 for i = 1:gOld.dim
