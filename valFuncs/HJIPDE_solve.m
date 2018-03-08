@@ -370,7 +370,7 @@ for i = istart:length(tau)
         y = min(y, yLast);
     elseif strcmp(minWith, 'data0') %Min with data0
       y = min(y,data0(:));
-    elseif strcmp(minWith, 'maxOverTime')
+    elseif strcmp(minWith, 'maxVOverTime')
       y = max(y,data0(:));
     end
     
