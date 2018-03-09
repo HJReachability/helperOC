@@ -29,6 +29,9 @@ function tutorial()
 %     add the following code:
 %     obstacles = shapeCylinder(g, 3, [-1.5; 1.5; 0], 0.75);
 %     HJIextraArgs.obstacles = obstacles;
+% 8. Add stochastic disturbance
+%     add the following code:
+%     HJIextraArgs.addGaussianNoiseStandardDeviation = [0.3; 0.3; 0];
 
 %% Should we compute the trajectory?
 compTraj = true;
@@ -78,7 +81,6 @@ schemeData.dynSys = dCar;
 schemeData.accuracy = 'high'; %set accuracy
 schemeData.uMode = uMode;
 %do dStep4 here
-
 
 %% If you have obstacles, compute them here
 

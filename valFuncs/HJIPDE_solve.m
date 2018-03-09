@@ -277,6 +277,26 @@ integratorOptions = odeCFLset('factorCFL', 0.8, 'singleStep', 'on');
 
 startTime = cputime;
 
+%% Stochastic additive terms
+if isfield(extraArgs, 'addGaussianNoiseStandardDeviation')
+    detFunc = schemeFunc;
+    detData = schemeData;
+    clear schemeFunc schemeData;
+
+    R = extraArgs.addGaussianNoiseStandardDeviation;
+    L = R';
+
+    stochasticFunc = @termTraceHessian;
+    stochasticData.grid = g;
+    stochasticData.L = L;
+    stochasticData.R = R;
+    stochasticData.hessianFunc = @hessianSecond;
+
+    schemeFunc = @termSum;
+    schemeData.innerFunc = { detFunc; stochasticFunc };
+    schemeData.innerData = { detData; stochasticData };
+end
+
 %% Initialize PDE solution
 data0size = size(data0);
 

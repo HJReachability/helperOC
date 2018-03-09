@@ -1,51 +1,24 @@
-function data = helperOC_tutorial()
-% 1. Run Backward Reachable Set (BRS) with a goal
-%     uMode = 'min' <-- goal
-%     minWith = 'none' <-- Set (not tube)
-%     compTraj = false <-- no trajectory
-% 2. Run BRS with goal, then optimal trajectory
-%     uMode = 'min' <-- goal
-%     minWith = 'none' <-- Set (not tube)
-%     compTraj = true <-- compute optimal trajectory
-% 3. Run Backward Reachable Tube (BRT) with a goal, then optimal trajectory
-%     uMode = 'min' <-- goal
-%     minWith = 'zero' <-- Tube (not set)
-%     compTraj = true <-- compute optimal trajectory
-% 4. Add disturbance
-%     dStep1: define a dMax (dMax = [.25, .25, 0];)
-%     dStep2: define a dMode (opposite of uMode)
-%     dStep3: input dMax when creating your DubinsCar
-%     dStep4: add dMode to schemeData
-% 5. Change to an avoid BRT rather than a goal BRT
-%     uMode = 'max' <-- avoid
-%     dMode = 'min' <-- opposite of uMode
-%     minWith = 'zero' <-- Tube (not set)
-%     compTraj = false <-- no trajectory
-% 6. Change to a Forward Reachable Tube (FRT)
-%     add schemeData.tMode = 'forward'
-%     note: now having uMode = 'max' essentially says "see how far I can
-%     reach"
-% 7. Add obstacles
-%     add the following code:
-%     obstacles = shapeCylinder(g, 3, [-1.5; 1.5; 0], 0.75);
-%     HJIextraArgs.obstacles = obstacles;
+function helperOC_tutorial()
+% modify size of the white noise's variance or the control bounds to the
+% effect of the additive random noise.
+% To do this, modify the wMax or
+% HJIextraArgs.addGausianNoiseStandardDeviation variables
 
 %% Should we compute the trajectory?
 compTraj = false;
 
 %% Grid
-grid_min = [-5; -5; -pi]; % Lower corner of computation domain
-grid_max = [5; 5; pi];    % Upper corner of computation domain
-N = [41; 41; 41];         % Number of grid points per dimension
-pdDims = 3;               % 3rd dimension is periodic
-g = createGrid(grid_min, grid_max, N, pdDims);
+grid_min = [-5; -5]; % Lower corner of computation domain
+grid_max = [5; 5];    % Upper corner of computation domain
+N = [41; 41];         % Number of grid points per dimension
+g = createGrid(grid_min, grid_max, N);
 % Use "g = createGrid(grid_min, grid_max, N);" if there are no periodic
 % state space dimensions
 
 %% target set
 R = 1;
 % data0 = shapeCylinder(grid,ignoreDims,center,radius)
-data0 = shapeCylinder(g, 3, [0; 0; 0], R);
+data0 = shapeCylinder(g, 2, [0; 0], R);
 % also try shapeRectangleByCorners, shapeSphere, etc.
 
 %% time vector
@@ -57,35 +30,31 @@ tau = t0:dt:tMax;
 %% problem parameters
 
 % input bounds
-speed = 1;
-wMax = 1;
-dMax = [.25, .25, 0]
-% do dStep1 here
+wMax = 1; % try wMax = 0.1
+HJIextraArgs.addGaussianNoiseStandardDeviation = [0;0.3]; % try [0;2]
 
 % control trying to min or max value function?
 uMode = 'max';
-dMode = 'min'
-% do dStep2 here
-
+dMode = 'min';
 
 %% Pack problem parameters
 
 % Define dynamic system
-% obj = DubinsCar(x, wMax, speed, dMax)
-dCar = DubinsCar([0, 0, 0], wMax, speed, dMax); %do dStep3 here
+dubInt = DoubleInt([0,0],[-wMax,wMax])
 
 % Put grid and dynamic systems into schemeData
 schemeData.grid = g;
-schemeData.dynSys = dCar;
+schemeData.dynSys = dubInt;
 schemeData.accuracy = 'high'; %set accuracy
 schemeData.uMode = uMode;
 schemeData.dMode = dMode;
-%do dStep4 here
 
 
 %% If you have obstacles, compute them here
+%{
 obstacles = shapeCylinder(g, 3, [-1.5;-1.5;0], 0.75);
 HJIextraArgs.obstacles = obstacles;
+%}
 
 %% Compute value function
 
@@ -112,7 +81,7 @@ if compTraj
   if value <= 0 %if initial state is in BRS/BRT
     % find optimal trajectory
     
-    dCar.x = xinit; %set initial state of the dubins car
+    dubInt.x = xinit; %set initial state of the dubins car
 
     TrajextraArgs.uMode = uMode; %set if control wants to min or max
     TrajextraArgs.visualize = true; %show plot
@@ -127,7 +96,7 @@ if compTraj
     % [traj, traj_tau] = ...
     % computeOptTraj(g, data, tau, dynSys, extraArgs)
     [traj, traj_tau] = ...
-      computeOptTraj(g, dataTraj, tau2, dCar, TrajextraArgs);
+      computeOptTraj(g, dataTraj, tau2, dubInt, TrajextraArgs);
   else
     error(['Initial state is not in the BRS/BRT! It have a value of ' num2str(value,2)])
   end
