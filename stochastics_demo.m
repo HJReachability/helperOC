@@ -1,8 +1,17 @@
 function helperOC_tutorial()
-% modify size of the white noise's variance or the control bounds to the
-% effect of the additive random noise.
-% To do this, modify the wMax or
-% HJIextraArgs.addGausianNoiseStandardDeviation variables
+% This demo simulates a double integrator system (like is often used as a
+% simple model of a quadrotor) with additive gaussian noise in the
+% acceleration term:
+%
+%    \dot{x} = v
+%    \dot{v} = u + w
+%
+%        where: w is distributed Normal(0,stDev^2)
+%               u is bound in [-uMax, uMax]
+%
+% Try modifying the size of the white noise's variance (S) or the control
+% bounds to play with the effect of the additive random noise.
+%    To do this, modify the uMax or stDev quantities and re-run the script
 
 %% Should we compute the trajectory?
 compTraj = false;
@@ -30,8 +39,11 @@ tau = t0:dt:tMax;
 %% problem parameters
 
 % input bounds
-wMax = 1; % try wMax = 0.1
-HJIextraArgs.addGaussianNoiseStandardDeviation = [0;0.3]; % try [0;2]
+uMax = 1; % try uMax = 0.1
+stDev = 0.3 % try stDev = 0.3
+HJIextraArgs.addGaussianNoiseStandardDeviation = [0;stDev]; % can also try
+% adding noise to other terms by changing the other terms corresponding to
+% the other states (e.g. change to [stDev;0])
 
 % control trying to min or max value function?
 uMode = 'max';
@@ -40,7 +52,7 @@ dMode = 'min';
 %% Pack problem parameters
 
 % Define dynamic system
-dubInt = DoubleInt([0,0],[-wMax,wMax])
+dubInt = DoubleInt([0,0],[-uMax,uMax])
 
 % Put grid and dynamic systems into schemeData
 schemeData.grid = g;
