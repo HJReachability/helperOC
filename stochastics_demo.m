@@ -30,6 +30,11 @@ R = 1;
 data0 = shapeCylinder(g, 2, [0; 0], R);
 % also try shapeRectangleByCorners, shapeSphere, etc.
 
+%% change the Value function from signed distance to probability of being
+% contained in the safe set for all time
+data0 = 0.5 * (1 + sign(data0));
+HJIextraArgs.RS_level = 0.5; % visualize the 50%-probability safe set
+
 %% time vector
 t0 = 0;
 tMax = 2;
@@ -47,7 +52,6 @@ HJIextraArgs.addGaussianNoiseStandardDeviation = [0;stDev]; % can also try
 
 % control trying to min or max value function?
 uMode = 'max';
-dMode = 'min';
 
 %% Pack problem parameters
 
@@ -59,7 +63,6 @@ schemeData.grid = g;
 schemeData.dynSys = dubInt;
 schemeData.accuracy = 'high'; %set accuracy
 schemeData.uMode = uMode;
-schemeData.dMode = dMode;
 
 
 %% If you have obstacles, compute them here
