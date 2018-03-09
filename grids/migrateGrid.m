@@ -54,6 +54,7 @@ if nargin < 4
   filler = 'max';
 end
 
+
 gNew_xsVec = zeros(prod(gNew.N), gOld.dim);
 for i = 1:gOld.dim
   gNew_xsVec(:,i) = gNew.xs{i}(:);
