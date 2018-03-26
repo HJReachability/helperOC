@@ -13,11 +13,11 @@ function [data, tau, extraOuts] = ...
 %   schemeData - problem parameters passed into the Hamiltonian function
 %                  .grid: grid (required!)
 %   compMethod - set to 'set' or 'none' to compute reachable set (not tube)
-%              - set to 'minWithZero' or 'zero' to do min with zero
-%              - set to 'minWithTime' to do min with previous data
-%              - set to 'minWithTarget' to do min with the target data
-%              - set to 'maxWithTime' to do max with previous data
-%              - set to 'maxWithTarget' to do max with the target data
+%              - set to 'zero' to do min with zero
+%              - set to 'none' to compute reachable set (not tube)
+%              - set to 'minVOverTime' to do min with previous data
+%              - set to 'minVWithTarget' to do min with original data
+%              - set to 'maxVOverTime' to do max over time
 %   extraArgs  - this structure can be used to leverage other additional
 %                functionalities within this function. Its subfields are:
 %     .obstacles:  a single obstacle or a list of obstacles with time
@@ -348,8 +348,8 @@ for i = istart:length(tau)
   %% Main integration loop to get to the next tau(i)
   while tNow < tau(i) - small
     % Save previous data if needed
-    if strcmp(compMethod, 'minWithTime') || ...
-            strcmp(compMethod, 'maxWithTime')
+    if strcmp(compMethod, 'minVOverTime') || ...
+            strcmp(compMethod, 'maxVOverTime')
       yLast = y;
     end
 
@@ -367,18 +367,18 @@ for i = istart:length(tau)
     
     %Tube Computations
 %   compMethod - set to 'set' or 'none' to compute reachable set (not tube)
-%              - set to 'minWithZero' or 'zero' to do min with zero
-%              - set to 'minWithTime' to do min with previous data
-%              - set to 'minWithTarget' to do min with the target data
-%              - set to 'maxWithTime' to do max with previous data
-%              - set to 'maxWithTarget' to do max with the target data
-    if strcmp(compMethod, 'minWithTime') %Min over Time
+%              - set to 'zero' to do min with zero
+%              - set to 'none' to compute reachable set (not tube)
+%              - set to 'minVOverTime' to do min with previous data
+%              - set to 'minVWithTarget' to do min with original data
+%              - set to 'maxVOverTime' to do max over time
+    if strcmp(compMethod, 'minVOverTime') %Min over Time
         y = min(y, yLast);
-    elseif strcmp(compMethod, 'maxOverTime')
+    elseif strcmp(compMethod, 'maxVOverTime')
         y = max(y, yLast);
-    elseif strcmp(compMethod, 'minWithTarget')
+    elseif strcmp(compMethod, 'minVWithTarget')%Min with data0
         y = min(y,data0(:));
-    elseif strcmp(compMethod, 'maxWithTarget') %Min with data0
+    elseif strcmp(compMethod, 'maxVWithTarget') 
         y = max(y,data0(:));
 
     end
