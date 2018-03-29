@@ -84,7 +84,7 @@ schemeData.uMode = uMode;
 
 %% additive random noise
 %do Step8 here
-HJIextraArgs.addGaussianNoiseStandardDeviation = [0.2;0.2;0.5];
+%HJIextraArgs.addGaussianNoiseStandardDeviation = [0; 0; 0.5];
 % Try other noise coefficients, like:
 %    [0.2; 0; 0]; % Noise on X state
 %    [0.2,0,0;0,0.2,0;0,0,0.5]; % Independent noise on all states
