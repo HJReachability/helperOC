@@ -29,9 +29,12 @@ function tutorial()
 %     add the following code:
 %     obstacles = shapeCylinder(g, 3, [-1.5; 1.5; 0], 0.75);
 %     HJIextraArgs.obstacles = obstacles;
+% 8. Add random disturbance (white noise)
+%     add the following code:
+%     HJIextraArgs.addGaussianNoiseStandardDeviation = [0; 0; 0.5];
 
 %% Should we compute the trajectory?
-compTraj = true;
+compTraj = false;
 
 %% Grid
 grid_min = [-5; -5; -pi]; % Lower corner of computation domain
@@ -79,6 +82,14 @@ schemeData.accuracy = 'high'; %set accuracy
 schemeData.uMode = uMode;
 %do dStep4 here
 
+%% additive random noise
+%do Step8 here
+HJIextraArgs.addGaussianNoiseStandardDeviation = [0.2;0.2;0.5];
+% Try other noise coefficients, like:
+%    [0.2; 0; 0]; % Noise on X state
+%    [0.2,0,0;0,0.2,0;0,0,0.5]; % Independent noise on all states
+%    [0.2;0.2;0.5]; % Coupled noise on all states
+%    {zeros(size(g.xs{1})); zeros(size(g.xs{1})); (g.xs{1}+g.xs{2})/20}; % State-dependent noise
 
 %% If you have obstacles, compute them here
 
