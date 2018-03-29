@@ -279,19 +279,24 @@ startTime = cputime;
 
 %% Stochastic additive terms
 if isfield(extraArgs, 'addGaussianNoiseStandardDeviation')
+    % We are taking all the previous scheme terms and adding noise to it
+    % Save all the previous terms as the deterministic component in detFunc
     detFunc = schemeFunc;
     detData = schemeData;
+      % The full computation scheme will include this added term so clear
+      % out the schemeFunc so we can pack everything back in later with the
+      % new stuff
     clear schemeFunc schemeData;
 
-    R = extraArgs.addGaussianNoiseStandardDeviation;
-    L = R';
-
+    % Create the Hessian term corresponding to white noise diffusion
     stochasticFunc = @termTraceHessian;
     stochasticData.grid = g;
-    stochasticData.L = L;
-    stochasticData.R = R;
+    stochasticData.L = extraArgs.addGaussianNoiseStandardDeviation';
+    stochasticData.R = extraArgs.addGaussianNoiseStandardDeviation;
     stochasticData.hessianFunc = @hessianSecond;
 
+    % Add the (saved) deterministic terms and the (new) stochastic term
+    % together into the complete scheme
     schemeFunc = @termSum;
     schemeData.innerFunc = { detFunc; stochasticFunc };
     schemeData.innerData = { detData; stochasticData };

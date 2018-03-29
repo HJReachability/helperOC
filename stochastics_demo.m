@@ -37,18 +37,20 @@ HJIextraArgs.RS_level = 0.5; % visualize the 50%-probability safe set
 
 %% time vector
 t0 = 0;
-tMax = 2;
+tMax = 3;
 dt = 0.05;
 tau = t0:dt:tMax;
 
 %% problem parameters
 
 % input bounds
-uMax = 1; % try uMax = 0.1
-stDev = 0.3 % try stDev = 0.3
-HJIextraArgs.addGaussianNoiseStandardDeviation = [0;stDev]; % can also try
-% adding noise to other terms by changing the other terms corresponding to
-% the other states (e.g. change to [stDev;0])
+uMax = 1;
+stDev = 3 % try stDev = 3
+HJIextraArgs.addGaussianNoiseStandardDeviation = [0;stDev]
+%    [stDev;0]; % Noise on first state
+%    [stDev,0;0,stDev]; % Independent noise on both states
+%    [stDev;1]; % Coupled noise on both states
+%    {(g.xs{1}+g.xs{2})/2;zeros(size(g.xs{1}))}; % State-dependent noise
 
 % control trying to min or max value function?
 uMode = 'max';
