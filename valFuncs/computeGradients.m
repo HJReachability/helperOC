@@ -26,8 +26,6 @@ end
 
 % Go through each dimension and compute the gradient in each
 derivC = cell(g.dim, 1);
-derivL = cell(g.dim, 1);
-derivR = cell(g.dim, 1);
 
 if numDims(data) == g.dim
   tau_length = 1;
@@ -50,35 +48,26 @@ data(infInds) = numInfty;
 
 for i = 1:g.dim
   derivC{i} = zeros(size(data));
-  derivL{i} = zeros(size(data));
-  derivR{i} = zeros(size(data));
   
   %% data at a single time stamp
   if tau_length == 1
     % Compute gradient using level set toolbox
-    [derivL{i}, derivR{i}] = derivFunc(g, data, i);
+    [derivL, derivR] = derivFunc(g, data, i);
     
     % Central gradient
-    derivC{i} = 0.5*(derivL{i} + derivR{i});
+    derivC{i} = 0.5*(derivL + derivR);
   else
     %% data at multiple time stamps
     for t = 1:tau_length
-      [derivL{i}(colons{:}, t), derivR{i}(colons{:}, t)] = ...
-        derivFunc(g, data(colons{:}, t), i);
-      derivC{i}(colons{:}, t) = ...
-        0.5*(derivL{i}(colons{:}, t) + derivR{i}(colons{:}, t));
+      [derivL, derivR] = derivFunc(g, data(colons{:}, t), i);
+      derivC{i}(colons{:}, t) = 0.5*(derivL + derivR);
     end
   end
     
   % Change indices where data was nan to nan
   derivC{i}(nanInds) = nan;
-  derivL{i}(nanInds) = nan;
-  derivR{i}(nanInds) = nan;
   
   % Change indices where data was inf to inf
   derivC{i}(infInds) = inf;
-  derivL{i}(infInds) = inf;
-  derivR{i}(infInds) = inf;
 end
-
 end

@@ -1,4 +1,4 @@
-function g = createGrid(grid_min, grid_max, N, pdDims, process)
+function g = createGrid(grid_min, grid_max, N, pdDims, process, low_mem)
 % g = createGrid(grid_min, grid_max, N, pdDim)
 %
 % Thin wrapper around processGrid to create a grid compatible with the
@@ -23,6 +23,10 @@ end
 
 if nargin < 5
   process = true;
+end
+
+if nargin < 6
+  low_mem = false;
 end
 
 %% Input checks
@@ -61,7 +65,7 @@ g.max = grid_max;
 g.N =  N;
 
 g.bdry = cell(g.dim, 1);
-for i = 1:length(g.bdry)
+for i = 1:g.dim
   if any(i == pdDims)
     g.bdry{i} = @addGhostPeriodic;
     g.max(i) = g.min(i) + (g.max(i) - g.min(i)) * (1 - 1/g.N(i));
@@ -70,7 +74,13 @@ for i = 1:length(g.bdry)
   end
 end
 
-if process
+if low_mem
+  g.dx = (grid_max - grid_min) ./ (N-1);
+  g.vs = cell(g.dim, 1);
+  for i = 1:g.dim
+    g.vs{i} = (grid_min(i) : g.dx(i) : grid_max(i))';
+  end
+elseif process
   g = processGrid(g);
 end
 end

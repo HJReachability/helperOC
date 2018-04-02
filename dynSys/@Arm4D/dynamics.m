@@ -1,7 +1,6 @@
 function dx = dynamics(obj, ~, x, u, d)
 % dx = dynamics(obj, ~, x, u, ~)
-%     Dynamics of the 8D Quadrotor in the plane
-%         This is the same as Quad10D without the last two states
+%     Dynamics of the 10D Quadrotor
 %         \dot x_1 = x_2 - d_1
 %         \dot x_2 = g * tan(x_3)
 %         \dot x_3 = -d1 * x_3 + x_4
@@ -10,11 +9,13 @@ function dx = dynamics(obj, ~, x, u, d)
 %         \dot x_6 = g * tan(x_7)
 %         \dot x_7 = -d1 * x_7 + x_8
 %         \dot x_8 = -d0 * x_7 + n0 * u2
-%              uMin <= [u1; u2] <= uMax
-%              dMin <= [d1; d2] <= dMax
+%         \dot x_9 = x_10 - d_3
+%         \dot x_10 = kT * u3
+%              uMin <= [u1; u2; u3] <= uMax
+%              dMin <= [d1; d2; d3] <= dMax
 
 if nargin < 5
-  d = {0; 0};
+  d = {0; 0; 0};
 end
 
 if nargin < 6
@@ -58,15 +59,19 @@ switch dim
   case 4
     dx = -obj.d0 * x{dims==3} + obj.n0 * u{1};
   case 5
-    dx = x{dims==6} + d{2};
+    dx = x{dims==6} - d{2};
   case 6
     dx = obj.g * tan(x{dims==7});
   case 7
     dx = -obj.d1 * x{dims==7} + x{dims==8};
   case 8
     dx = -obj.d0 * x{dims==7} + obj.n0 * u{2};
+  case 9
+    dx = x{dims==10} + d{3};
+  case 10
+    dx = obj.kT * u{3} - obj.g;
     
   otherwise
-    error('Only dimension 1-8 are defined for dynamics of Quad8D!')
+    error('Only dimension 1-10 are defined for dynamics of Quad10D!')
 end
 end
