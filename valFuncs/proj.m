@@ -58,7 +58,7 @@ if nargin < 6
 end
 
 dataDims = numDims(data);
-if ~isempty(data) && ~(dataDims == g.dim || dataDims == g.dim+1)
+if ~isempty(data) && ~(dataDims == g.dim || dataDims == g.dim+1) && ~iscell(data)
   error('Inconsistent input data dimensions!')
 end
 
@@ -71,14 +71,24 @@ else % dataDims == g.dim + 1
   gOut = projSingle(g, [], dimsToRemove, xs, NOut, process);
   
   % Project data
-  numTimeSteps = size(data, dataDims);
-  dataOut = zeros([NOut' numTimeSteps]);
-  colonsIn = repmat({':'}, 1, g.dim);
+  if iscell(data)
+    numTimeSteps = length(data);
+  else
+    numTimeSteps = size(data, dataDims);
+    colonsIn = repmat({':'}, 1, g.dim);
+  end
   
+  dataOut = zeros([NOut' numTimeSteps]);
   colonsOut = repmat({':'}, 1, gOut.dim);
+  
   for i = 1:numTimeSteps
+    if iscell(data)
     [~, dataOut(colonsOut{:},i)] = ...
-      projSingle(g, data(colonsIn{:},i), dimsToRemove, xs, NOut, process);
+      projSingle(g, data{i}, dimsToRemove, xs, NOut, process);   
+    else
+    [~, dataOut(colonsOut{:},i)] = ...
+      projSingle(g, data(colonsIn{:},i), dimsToRemove, xs, NOut, process);      
+    end
   end
 end
 
