@@ -1,77 +1,67 @@
-function dx = dynamics(obj, ~, x, u, d)
-% dx = dynamics(obj, ~, x, u, ~)
-%     Dynamics of the 10D Quadrotor
-%         \dot x_1 = x_2 - d_1
-%         \dot x_2 = g * tan(x_3)
-%         \dot x_3 = -d1 * x_3 + x_4
-%         \dot x_4 = -d0 * x_3 + n0 * u1
-%         \dot x_5 = x_6 - d_2
-%         \dot x_6 = g * tan(x_7)
-%         \dot x_7 = -d1 * x_7 + x_8
-%         \dot x_8 = -d0 * x_7 + n0 * u2
-%         \dot x_9 = x_10 - d_3
-%         \dot x_10 = kT * u3
-%              uMin <= [u1; u2; u3] <= uMax
-%              dMin <= [d1; d2; d3] <= dMax
+function dx = dynamics(obj, ~, x, u, d, ~)
+% dx = dynamics(obj, t, x, u, d)
+%     Dynamics of the robot arm
 
-if nargin < 5
-  d = {0; 0; 0};
-end
+dx = cell(obj.nx,1);
+dims = obj.dims;
 
-if nargin < 6
-  dims = obj.dims;
-end
-
-convert2num = false;
+returnVector = false;
 if ~iscell(x)
+  returnVector = true;
   x = num2cell(x);
-  convert2num = true;
-end
-
-if ~iscell(u)
   u = num2cell(u);
 end
-
-if ~iscell(d)
-  d = num2cell(d);
-end
-
-dx = cell(length(dims), 1);
 
 for i = 1:length(dims)
   dx{i} = dynamics_cell_helper(obj, x, u, d, dims, dims(i));
 end
 
-if convert2num
+if returnVector
   dx = cell2mat(dx);
 end
-
 end
 
 function dx = dynamics_cell_helper(obj, x, u, d, dims, dim)
-switch dim
-  case 1
-    dx = x{dims==2} + d{1};
-  case 2
-    dx = obj.g * tan(x{dims==3});
-  case 3
-    dx = -obj.d1 * x{dims==3} + x{dims==4};
-  case 4
-    dx = -obj.d0 * x{dims==3} + obj.n0 * u{1};
-  case 5
-    dx = x{dims==6} - d{2};
-  case 6
-    dx = obj.g * tan(x{dims==7});
-  case 7
-    dx = -obj.d1 * x{dims==7} + x{dims==8};
-  case 8
-    dx = -obj.d0 * x{dims==7} + obj.n0 * u{2};
-  case 9
-    dx = x{dims==10} + d{3};
-  case 10
-    dx = obj.kT * u{3} - obj.g;
-    
-  otherwise
-    error('Only dimension 1-10 are defined for dynamics of Quad10D!')
+    % Returns dx for each dimension of the state space
+
+    flatSize = numel(x{1});
+    switch dim
+      case 1 % velocity of angle th1
+        dx = x{dims==3};
+      case 2 % velocity of angle th2
+        dx = x{dims==4};
+      case 3 % acceleration of angle th1
+        % TODO This is inefficient to call twice for high DOF systems.
+        [ddth1, ~] = arrayfun(@acceleration_helper, reshape(x{1}, [1, flatSize]), ...
+            reshape(x{2}, [1, flatSize]), reshape(x{3}, [1, flatSize]), ...
+            reshape(x{4}, [1, flatSize]), reshape(u{1}, [1, flatSize]), ...
+            reshape(u{2}, [1, flatSize]));
+        dx = reshape(ddth1, size(x{1}));
+      case 4 % acceleration of angle th2
+        [~, ddth2] = arrayfun(@acceleration_helper, reshape(x{1}, [1, flatSize]), ...
+            reshape(x{2}, [1, flatSize]), reshape(x{3}, [1, flatSize]), ...
+            reshape(x{4}, [1, flatSize]), reshape(u{1}, [1, flatSize]), ...
+            reshape(u{2}, [1, flatSize]));
+        dx = reshape(ddth2, size(x{1}));
+      otherwise
+        error('Only dimensions 1-4 are defined for dynamics of Arm4D!')
+    end
+
+    function [ddth1, ddth2] = acceleration_helper(th1, th2, dth1, dth2, u1, u2)
+        % Computes acceleration given the current state and controls
+        th = [th1; th2];
+        dth = [dth1; dth2];
+        M = obj.get_M(th);
+        C = obj.get_C(th,dth);
+        N = obj.get_N(th);
+        uR = [u1; u2];
+        %ddth = M\(uR + dH - C*dth - N);
+        ddth = M\(uR - C*dth - N);
+        ddth1 = ddth(1);
+        ddth2 = ddth(2);
+    end
+
 end
-end
+
+
+
