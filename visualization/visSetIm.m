@@ -128,11 +128,11 @@ switch g.dim
     
   case 2
     if isscalar(level)
-      [~, h] = contour(g.vs{1}, g.vs{2}, data, [level level], 'color', color);
+      [~, h] = contour(g.vs{1}, g.vs{2}, data', [level level], 'color', color);
     elseif isempty(level)
-      [~, h] = contour(g.vs{1}, g.vs{2}, data);
+      [~, h] = contour(g.vs{1}, g.vs{2}, data');
     else
-      [~, h] = contour(g.vs{1}, g.vs{2}, data, level, 'color', color);
+      [~, h] = contour(g.vs{1}, g.vs{2}, data', level, 'color', color);
     end
     
     h.LineStyle = LineStyle;
