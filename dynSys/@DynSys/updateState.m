@@ -34,6 +34,11 @@ if isempty(u)
   return;
 end
 
+% convert u to vector if needed
+if iscell(u)
+  u = cell2mat(u);
+end
+
 % Do nothing if control is not a number
 if isnan(u)
   warning('u = NaN')

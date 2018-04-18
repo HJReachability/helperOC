@@ -6,6 +6,10 @@ function dx = dynamics(obj, ~, x, u, d)
 %         \dot{x}_3 = u_1 = u_1
 %         \dot{x}_4 = u_2 = u_2
 
+if nargin < 5
+  d = [0; 0; 0];
+end
+
 dx = cell(obj.nx, 1);
 
 returnVector = false;
