@@ -291,7 +291,7 @@ if (isfield(extraArgs, 'visualize') && extraArgs.visualize)...
     grid on
     
     % Number of dimensions to be plotted and to be projected
-    pDims = nnz(plotDims)
+    pDims = nnz(plotDims);
     projDims = length(projpt);
     
     % Basic Checks
