@@ -1,4 +1,4 @@
-function [derivC, derivL, derivR] = computeGradients(g, data, derivFunc, upWind)
+function [derivC, derivL, derivR] = computeGradients(g, data, dims, derivFunc)
 % [derivC, derivL, derivR] = computeGradients(g, data, derivFunc, upWind)
 %
 % Estimates the costate p at position x for cost function data on grid g by
@@ -16,13 +16,14 @@ function [derivC, derivL, derivR] = computeGradients(g, data, derivFunc, upWind)
 %         derivL    - left gradient
 %         derivR    - right gradient
 
-if nargin<3
+if nargin < 3
+  dims = true(g.dim, 1);
+end
+
+if nargin < 4
   derivFunc = @upwindFirstWENO5;
 end
 
-if nargin > 3 && upWind
-  error('Upwinding has not been implemented!')
-end
 
 % Go through each dimension and compute the gradient in each
 derivC = cell(g.dim, 1);
@@ -47,27 +48,29 @@ infInds = isinf(data);
 data(infInds) = numInfty;
 
 for i = 1:g.dim
-  derivC{i} = zeros(size(data));
-  
-  %% data at a single time stamp
-  if tau_length == 1
-    % Compute gradient using level set toolbox
-    [derivL, derivR] = derivFunc(g, data, i);
+  if dims(i)
+    derivC{i} = zeros(size(data));
     
-    % Central gradient
-    derivC{i} = 0.5*(derivL + derivR);
-  else
-    %% data at multiple time stamps
-    for t = 1:tau_length
-      [derivL, derivR] = derivFunc(g, data(colons{:}, t), i);
-      derivC{i}(colons{:}, t) = 0.5*(derivL + derivR);
+    %% data at a single time stamp
+    if tau_length == 1
+      % Compute gradient using level set toolbox
+      [derivL, derivR] = derivFunc(g, data, i);
+      
+      % Central gradient
+      derivC{i} = 0.5*(derivL + derivR);
+    else
+      %% data at multiple time stamps
+      for t = 1:tau_length
+        [derivL, derivR] = derivFunc(g, data(colons{:}, t), i);
+        derivC{i}(colons{:}, t) = 0.5*(derivL + derivR);
+      end
     end
-  end
     
-  % Change indices where data was nan to nan
-  derivC{i}(nanInds) = nan;
-  
-  % Change indices where data was inf to inf
-  derivC{i}(infInds) = inf;
+    % Change indices where data was nan to nan
+    derivC{i}(nanInds) = nan;
+    
+    % Change indices where data was inf to inf
+    derivC{i}(infInds) = inf;
+  end
 end
 end
