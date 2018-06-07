@@ -14,13 +14,24 @@ if strcmp(whatTest, 'sphere')
   R = 0.5;
   numSphere = shapeSphere(g, zeros(3,1), R);
   
-  numDeriv = computeGradients(g, numSphere);
+  dims = false(g.dim, 1);
+  for i = 1:g.dim
+    if rand > 0.5
+      dims(i) = true;
+    end
+  end
+  
+  disp(dims)
+  
+  numDeriv = computeGradients(g, numSphere, dims);
 
   error = 0;
     
-  for i = 1:3
-    deriv = g.xs{i} ./ sqrt(g.xs{1}.^2 + g.xs{2}.^2 + g.xs{3}.^2);
-    error = error + sqrt(sum((numDeriv{i}(:) - deriv(:)).^2))/prod(N);
+  for i = 1:g.dim
+    if dims(i)
+      deriv = g.xs{i} ./ sqrt(g.xs{1}.^2 + g.xs{2}.^2 + g.xs{3}.^2);
+      error = error + sqrt(sum((numDeriv{i}(:) - deriv(:)).^2))/prod(N);
+    end
   end
   
   fprintf('Average error grid points: %f\n', error);
