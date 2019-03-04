@@ -9,7 +9,7 @@ function tutorial()
 %     compTraj = true <-- compute optimal trajectory
 % 3. Run Backward Reachable Tube (BRT) with a goal, then optimal trajectory
 %     uMode = 'min' <-- goal
-%     minWith = 'zero' <-- Tube (not set)
+%     minWith = 'minVWithTarget' <-- Tube (not set)
 %     compTraj = true <-- compute optimal trajectory
 % 4. Add disturbance
 %     dStep1: define a dMax (dMax = [.25, .25, 0];)
@@ -19,7 +19,7 @@ function tutorial()
 % 5. Change to an avoid BRT rather than a goal BRT
 %     uMode = 'max' <-- avoid
 %     dMode = 'min' <-- opposite of uMode
-%     minWith = 'zero' <-- Tube (not set)
+%     minWith = 'minVWithTarget' <-- Tube (not set)
 %     compTraj = false <-- no trajectory
 % 6. Change to a Forward Reachable Tube (FRT)
 %     add schemeData.tMode = 'forward'
