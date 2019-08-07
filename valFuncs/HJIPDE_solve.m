@@ -60,6 +60,8 @@ function [data, tau, extraOuts] = ...
 %                           it converges
 %     .convergeThreshold:   Max change in each iteration allowed when 
 %                           checking convergence
+%     .ignoreBoundary:      Ignores the boundary of the grid when
+%                           calculating convergence
 %     .discountFactor:      (double) amount by which you'd like to discount
 %                           the value function. Used for ensuring
 %                           convergence. Remember to move your targets
@@ -92,6 +94,9 @@ function [data, tau, extraOuts] = ...
 %
 %     .compRegion:          unused for now (meant to limit computation 
 %                           region)
+%     .addGaussianNoiseStandardDeviation:
+%           adds random noise 
+%
 %     .makeVideo:           (bool) whether or not to create a video
 %     .videoFilename:       (string) filename of video
 %     .frameRate:           (int) framerate of video
@@ -124,6 +129,9 @@ function [data, tau, extraOuts] = ...
 %                           .xTitle:            (string) x axis title
 %                           .yTitle:            (string) y axis title
 %                           .zTitle:            (string) z axis title
+%                           .dtTime             How often you want to
+%                                               update time stamp on title 
+%                                               of plot
 %                           .fontSize:          (int) font size of figure
 %                           .deleteLastPlot:    (bool) set to true to   
 %                                               delete previous plot 
@@ -877,6 +885,31 @@ end
 integratorOptions = odeCFLset('factorCFL', 0.8, 'singleStep', 'on');
 
 startTime = cputime;
+
+%% Stochastic additive terms
+if isfield(extraArgs, 'addGaussianNoiseStandardDeviation')
+    % We are taking all the previous scheme terms and adding noise to it
+    % Save all the previous terms as the deterministic component in detFunc
+    detFunc = schemeFunc;
+    detData = schemeData;
+      % The full computation scheme will include this added term so clear
+      % out the schemeFunc so we can pack everything back in later with the
+      % new stuff
+    clear schemeFunc schemeData;
+
+    % Create the Hessian term corresponding to white noise diffusion
+    stochasticFunc = @termTraceHessian;
+    stochasticData.grid = g;
+    stochasticData.L = extraArgs.addGaussianNoiseStandardDeviation';
+    stochasticData.R = extraArgs.addGaussianNoiseStandardDeviation;
+    stochasticData.hessianFunc = @hessianSecond;
+
+    % Add the (saved) deterministic terms and the (new) stochastic term
+    % together into the complete scheme
+    schemeFunc = @termSum;
+    schemeData.innerFunc = { detFunc; stochasticFunc };
+    schemeData.innerData = { detData; stochasticData };
+end
 
 %% Initialize PDE solution
 data0size = size(data0);
