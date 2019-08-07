@@ -13,7 +13,7 @@ if ~iscell(deriv)
 end
 
 dims = obj.dims;
-%% Optimal control
+%% Optimal dist
 if strcmp(dMode, 'max')
   if any(dims == 1)
     dOpt{1} = ((-deriv{dims==1})>=0)*(obj.dMax(1)) + ...

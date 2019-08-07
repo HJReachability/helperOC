@@ -1,4 +1,4 @@
-classdef DoubleInt < DynSys
+classdef DoubleIntMult < DynSys
   % Double integrator class; subclass of DynSys (dynamical system)
   properties
     uMin    % Control bounds
@@ -7,10 +7,11 @@ classdef DoubleInt < DynSys
     dMax
     dims    % Active dimensions
     TIdim
+    k
   end % end properties
   
   methods
-    function obj = DoubleInt(x, urange, drange, dims, TIdim)
+    function obj = DoubleIntMult(x, urange, drange, k, dims, TIdim)
       % DoubleInt(x, urange)
       %     Constructor for the double integrator
       %
@@ -33,10 +34,14 @@ classdef DoubleInt < DynSys
       end
       
       if nargin < 4
+          k = 1;
+      end
+      
+      if nargin <5
         dims = 1:2;
       end
       
-      if nargin < 5
+      if nargin < 6
         TIdim = [];
       end
       
@@ -74,6 +79,7 @@ classdef DoubleInt < DynSys
       obj.uMax = urange(2);
       obj.dMin = drange(1);
       obj.dMax = drange(2);
+      obj.k = k;
       obj.dims = dims;
       obj.TIdim = TIdim;
     end % end constructor

@@ -1,16 +1,13 @@
-classdef DoubleInt < DynSys
+classdef TripleInt < DynSys
   % Double integrator class; subclass of DynSys (dynamical system)
   properties
     uMin    % Control bounds
     uMax
-    dMin
-    dMax
     dims    % Active dimensions
-    TIdim
   end % end properties
   
   methods
-    function obj = DoubleInt(x, urange, drange, dims, TIdim)
+    function obj = TripleInt(x, uMin, uMax, dims)
       % DoubleInt(x, urange)
       %     Constructor for the double integrator
       %
@@ -25,19 +22,15 @@ classdef DoubleInt < DynSys
       end
       
       if nargin < 2
-        urange = [-3 3];
+        uMin = -3;
       end
       
-      if nargin <3
-          drange = [0 0];
+      if nargin < 3
+          uMax = 3;
       end
       
-      if nargin < 4
-        dims = 1:2;
-      end
-      
-      if nargin < 5
-        TIdim = [];
+      if nargin <4
+        dims = 1:3;
       end
       
       %% Basic properties for bookkeepping
@@ -45,12 +38,11 @@ classdef DoubleInt < DynSys
       obj.vdim = find(dims == 2);
       obj.nx = length(dims);
       obj.nu = 1;
-      obj.nd = 1;
       
       %% Process input
-      % Make sure initial state is 2D
-      if numel(x) ~= 2
-        error('DoubleInt state must be 2D.')
+      % Make sure initial state is 3D
+      if numel(x) ~= 3
+        error('TripleInt state must be 3D.')
       end
       
       % Make sure initial state is a column vector
@@ -62,20 +54,10 @@ classdef DoubleInt < DynSys
       obj.xhist = x; % State history (only used for simulation)
       
       %% Process control range
-      if numel(urange) ~= 2
-        error('Control range must be 2D!')
-      end
       
-      if urange(2) <= urange(1)
-        error('Control range vector must be strictly ascending!')
-      end
-      
-      obj.uMin = urange(1);
-      obj.uMax = urange(2);
-      obj.dMin = drange(1);
-      obj.dMax = drange(2);
+      obj.uMin = uMin;
+      obj.uMax = uMax;
       obj.dims = dims;
-      obj.TIdim = TIdim;
     end % end constructor
   end % end methods
 end % end class

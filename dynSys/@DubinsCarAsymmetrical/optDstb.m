@@ -20,16 +20,16 @@ dOpt = cell(obj.nd, 1);
 if strcmp(dMode, 'max')
   for i = 1:3
     if any(obj.dims == i)
-      dOpt{i} = (deriv{obj.dims==i}>=0)*obj.dRange{2}(i) + ...
-        (deriv{obj.dims==i}<0)*(obj.dRange{1}(i));
+      dOpt{i} = (deriv{obj.dims==i}>=0)*obj.dMax(i) + ...
+        (deriv{obj.dims==i}<0)*(-obj.dMax(i));
     end
   end
 
 elseif strcmp(dMode, 'min')
   for i = 1:3
     if any(obj.dims == i)
-      dOpt{i} = (deriv{obj.dims==i}>=0)*(obj.dRange{1}(i)) + ...
-        (deriv{obj.dims==i}<0)*obj.dRange{2}(i);
+      dOpt{i} = (deriv{obj.dims==i}>=0)*(-obj.dMax(i)) + ...
+        (deriv{obj.dims==i}<0)*obj.dMax(i);
     end
   end
 else

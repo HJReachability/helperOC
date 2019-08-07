@@ -11,12 +11,12 @@ end
 if iscell(deriv)
   uOpt = cell(obj.nu, 1);
   if strcmp(uMode, 'max')
-    uOpt{1} = (deriv{1}>=0)*obj.vxMax + (deriv{1}<0)* -obj.vxMax;
-    uOpt{2} = (deriv{2}>=0)*obj.vyMax + (deriv{2}<0)* -obj.vyMax;
+    uOpt{1} = (deriv{1}>=0)*obj.vxMax + (deriv{1}<0)* obj.vxMin;
+    uOpt{2} = (deriv{2}>=0)*obj.vyMax + (deriv{2}<0)* obj.vyMin;
     
   elseif strcmp(uMode, 'min')
-    uOpt{1} = (deriv{1}>=0)* -obj.vxMax + (deriv{1}<0)*obj.vxMax;
-    uOpt{2} = (deriv{2}>=0)* -obj.vyMax + (deriv{2}<0)*obj.vyMax;
+    uOpt{1} = (deriv{1}>=0)* obj.vxMin + (deriv{1}<0)*obj.vxMax;
+    uOpt{2} = (deriv{2}>=0)* obj.vyMin + (deriv{2}<0)*obj.vyMax;
   else
     error('Unknown uMode!')
   end  
@@ -24,12 +24,12 @@ if iscell(deriv)
 else
   uOpt = zeros(obj.nu, 1);
   if strcmp(uMode, 'max')
-    uOpt(1) = (deriv(1)>=0)*obj.vxMax + (deriv(1)<0)* -obj.vxMax;
-    uOpt(2) = (deriv(2)>=0)*obj.vyMax + (deriv(2)<0)* -obj.vyMax;
+    uOpt(1) = (deriv(1)>=0)*obj.vxMax + (deriv(1)<0)* obj.vxMin;
+    uOpt(2) = (deriv(2)>=0)*obj.vyMax + (deriv(2)<0)* obj.vyMin;
     
   elseif strcmp(uMode, 'min')
-    uOpt(1) = (deriv(1)>=0)* -obj.vxMax + (deriv(1)<0)*obj.vxMax;
-    uOpt(2) = (deriv(2)>=0)* -obj.vyMax + (deriv(2)<0)*obj.vyMax;
+    uOpt(1) = (deriv(1)>=0)* obj.vxMin + (deriv(1)<0)*obj.vxMax;
+    uOpt(2) = (deriv(2)>=0)* obj.vyMin + (deriv(2)<0)*obj.vyMax;
     
   else
     error('Unknown uMode!')

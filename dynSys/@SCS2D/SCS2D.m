@@ -1,38 +1,39 @@
-classdef DubinsCar < DynSys
-  properties
-    % Angle bounds
-    wRange
+classdef SCS2D < DynSys
+    %example for "self-contained subsystems" that's 2D (which in 2D means
+    %only coupled through control)
+    %Sylvia Herbert (06-25-18)
     
-    speed % Constant speed
+  properties
+    %control bounds
+    uMin
+    uMax
     
     % Disturbance
-    dRange
+    dMax
     
     % Dimensions that are active
     dims
   end
   
   methods
-    function obj = DubinsCar(x, wRange, speed, dRange, dims)
-      % obj = DubinsCar(x, wMax, speed, dMax, dims)
-      %     Dubins Car class
+    function obj = SCS2D(x, uMin, uMax, dMax, dims)
+      % obj = SCS2D(x, wMax, speed, dMax, dims)
+      %     Self Contained Subsystems 2D class
       %
       % Dynamics:
-      %    \dot{x}_1 = v * cos(x_3) + d1
-      %    \dot{x}_2 = v * sin(x_3) + d2
-      %    \dot{x}_3 = u
-      %         u \in [-wMax, wMax]
+      %    \dot{x}_1 = x_1*u + d1
+      %    \dot{x}_2 = u + d2
+      %         u \in [uMin, uMax]
       %         d \in [-dMax, dMax]
       %
       % Inputs:
       %   x      - state: [xpos; ypos]
-      %   thetaMin   - minimum angle
-      %   thetaMax   - maximum angle
-      %   v - speed
+      %   uMin   - minimum control
+      %   uMax   - maximum control
       %   dMax   - disturbance bounds
       %
       % Output:
-      %   obj       - a DubinsCar2D object
+      %   obj       - a SCS2D object
       
       if numel(x) ~= obj.nx
         error('Initial state does not have right dimension!');
@@ -43,27 +44,19 @@ classdef DubinsCar < DynSys
       end
       
       if nargin < 2
-        wRange = [-1 1];
+        uMin = -2;
       end
       
       if nargin < 3
-        speed = 5;
+        uMax = 2;
       end
       
       if nargin < 4
-        dRange = {[0;0;0];[0; 0; 0]};
+        dMax = [0; 0];
       end
       
       if nargin < 5
-        dims = 1:3;
-      end
-      
-      if numel(wRange) <2
-          wRange = [-wRange; wRange];
-      end
-      
-      if ~iscell(dRange)
-          dRange = {-dRange,dRange};
+        dims = 1:2;
       end
       
       % Basic vehicle properties
@@ -71,15 +64,14 @@ classdef DubinsCar < DynSys
       %obj.hdim = find(dims == 3);   % Heading dimensions
       obj.nx = length(dims);
       obj.nu = 1;
-      obj.nd = 3;
+      obj.nd = 2;
       
       obj.x = x;
       obj.xhist = obj.x;
       
-      obj.wRange = wRange;
-      %obj.thetaMax = thetaMax;
-      obj.speed = speed;
-      obj.dRange = dRange;
+      obj.uMin = uMin;
+      obj.uMax = uMax;
+      obj.dMax = dMax;
       obj.dims = dims;
     end
     

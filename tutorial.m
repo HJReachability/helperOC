@@ -9,7 +9,7 @@ function tutorial()
 %     compTraj = true <-- compute optimal trajectory
 % 3. Run Backward Reachable Tube (BRT) with a goal, then optimal trajectory
 %     uMode = 'min' <-- goal
-%     minWith = 'minVWithTarget' <-- Tube (not set)
+%     minWith = 'zero' <-- Tube (not set)
 %     compTraj = true <-- compute optimal trajectory
 % 4. Add disturbance
 %     dStep1: define a dMax (dMax = [.25, .25, 0];)
@@ -19,7 +19,7 @@ function tutorial()
 % 5. Change to an avoid BRT rather than a goal BRT
 %     uMode = 'max' <-- avoid
 %     dMode = 'min' <-- opposite of uMode
-%     minWith = 'minVWithTarget' <-- Tube (not set)
+%     minWith = 'zero' <-- Tube (not set)
 %     compTraj = false <-- no trajectory
 % 6. Change to a Forward Reachable Tube (FRT)
 %     add schemeData.tMode = 'forward'
@@ -33,8 +33,9 @@ function tutorial()
 %     add the following code:
 %     HJIextraArgs.addGaussianNoiseStandardDeviation = [0; 0; 0.5];
 
+
 %% Should we compute the trajectory?
-compTraj = false;
+compTraj = true;
 
 %% Grid
 grid_min = [-5; -5; -pi]; % Lower corner of computation domain
@@ -95,21 +96,36 @@ schemeData.uMode = uMode;
 
 %% Compute value function
 
-HJIextraArgs.visualize = true; %show plot
-HJIextraArgs.fig_num = 1; %set figure number
-HJIextraArgs.deleteLastPlot = true; %delete previous plot as you update
+%HJIextraArgs.visualize = true; %show plot
+HJIextraArgs.visualize.valueSet = 1;
+HJIextraArgs.visualize.initialValueSet = 1;
+HJIextraArgs.visualize.figNum = 1; %set figure number
+HJIextraArgs.visualize.deleteLastPlot = true; %delete previous plot as you update
+
+% uncomment if you want to see a 2D slice
+%HJIextraArgs.visualize.plotData.plotDims = [1 1 0]; %plot x, y
+%HJIextraArgs.visualize.plotData.projpt = [0]; %project at theta = 0
+%HJIextraArgs.visualize.viewAngle = [0,90]; % view 2D
 
 %[data, tau, extraOuts] = ...
 % HJIPDE_solve(data0, tau, schemeData, minWith, extraArgs)
 [data, tau2, ~] = ...
-  HJIPDE_solve(data0, tau, schemeData, 'none', HJIextraArgs);
+  HJIPDE_solve(data0, tau, schemeData, 'zero', HJIextraArgs);
 
 %% Compute optimal trajectory from some initial state
 if compTraj
   pause
   
   %set the initial state
-  xinit = [2, 1, -pi];
+  xinit = [2, 2, -pi];
+  
+  figure(6)
+  clf
+  h = visSetIm(g, data(:,:,:,end));
+  h.FaceAlpha = .3;
+  hold on
+  s = scatter3(xinit(1), xinit(2), xinit(3));
+  s.SizeData = 70;
   
   %check if this initial state is in the BRS/BRT
   %value = eval_u(g, data, x)

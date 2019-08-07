@@ -1,19 +1,19 @@
 classdef DubinsCar < DynSys
   properties
     % Angle bounds
-    wRange
+    wMax
     
     speed % Constant speed
     
     % Disturbance
-    dRange
+    dMax
     
     % Dimensions that are active
     dims
   end
   
   methods
-    function obj = DubinsCar(x, wRange, speed, dRange, dims)
+    function obj = DubinsCar(x, wMax, speed, dMax, dims)
       % obj = DubinsCar(x, wMax, speed, dMax, dims)
       %     Dubins Car class
       %
@@ -43,7 +43,7 @@ classdef DubinsCar < DynSys
       end
       
       if nargin < 2
-        wRange = [-1 1];
+        wMax = 1;
       end
       
       if nargin < 3
@@ -51,19 +51,11 @@ classdef DubinsCar < DynSys
       end
       
       if nargin < 4
-        dRange = {[0;0;0];[0; 0; 0]};
+        dMax = [0; 0; 0];
       end
       
       if nargin < 5
         dims = 1:3;
-      end
-      
-      if numel(wRange) <2
-          wRange = [-wRange; wRange];
-      end
-      
-      if ~iscell(dRange)
-          dRange = {-dRange,dRange};
       end
       
       % Basic vehicle properties
@@ -76,10 +68,10 @@ classdef DubinsCar < DynSys
       obj.x = x;
       obj.xhist = obj.x;
       
-      obj.wRange = wRange;
+      obj.wMax = wMax;
       %obj.thetaMax = thetaMax;
       obj.speed = speed;
-      obj.dRange = dRange;
+      obj.dMax = dMax;
       obj.dims = dims;
     end
     

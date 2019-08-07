@@ -10,7 +10,7 @@ if iscell(x)
     dx{i} = obj.dyn_helper(x, u, d, obj.dims, obj.dims(i));
   end
 else
-  dx = [x(2)+d; u];
+  dx = [x(2)+d; (obj.k).*u];
 end
   
 end

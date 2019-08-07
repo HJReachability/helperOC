@@ -51,7 +51,7 @@ end
 function dx = dynamics_cell_helper(obj, x, u, d, dims, dim)
 switch dim
   case 1
-    dx = x{dims==2} + d{1};
+    dx = x{dims==2} - d{1};
   case 2
     dx = obj.g * tan(x{dims==3});
   case 3
@@ -67,7 +67,7 @@ switch dim
   case 8
     dx = -obj.d0 * x{dims==7} + obj.n0 * u{2};
   case 9
-    dx = x{dims==10} + d{3};
+    dx = x{dims==10} - d{3};
   case 10
     dx = obj.kT * u{3} - obj.g;
     

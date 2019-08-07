@@ -15,6 +15,10 @@ if ~iscell(deriv)
   deriv = num2cell(deriv);
 end
 
+if ~iscell(x)
+  x = num2cell(x);
+end
+
 %% Optimal control
 if strcmp(uMode, 'max')
   
@@ -65,7 +69,7 @@ if strcmp(uMode, 'max')
     error('not set up for that deconstruction!')
   end
 
-elseif strcmp(uMode{1}, 'min')
+elseif strcmp(uMode, 'min')
   if isempty(setdiff([2, 4, 5, 6],dims))
     T1Opt = (((deriv{dims==2}.*(-1/obj.m).*(sin(x{dims==5})))+...
       (deriv{dims==4}.*((1/obj.m).*cos(x{dims==5})))+...
