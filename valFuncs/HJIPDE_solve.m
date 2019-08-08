@@ -14,51 +14,53 @@ function [data, tau, extraOuts] = ...
 %                       .grid: grid (required!)
 %                       .accuracy: accuracy of derivatives
 %   compMethod      - Informs which optimization we're doing
-%                       - 'set' or 'none' to compute reachable set 
+%                       - 'set' or 'none' to compute reachable set
 %                         (not tube)
-%                       - 'zero' or 'minWithZero' to min Hamiltonian with 
+%                       - 'zero' or 'minWithZero' to min Hamiltonian with
 %                          zero
 %                       - 'minVOverTime' to do min with previous data
 %                       - 'maxVOverTime' to do max with previous data
 %                       - 'minVWithL' or 'minVWithTarget' to do min with
 %                          targets
-%                       - 'maxVWithL' or 'maxVWithTarget' to do max with 
+%                       - 'maxVWithL' or 'maxVWithTarget' to do max with
 %                          targets
-%                       - 'minVWithV0' to do min with original data 
+%                       - 'minVWithV0' to do min with original data
 %                         (default)
 %                       - 'maxVWithV0' to do max with original data
-%   extraArgs       - this structure can be used to leverage other 
-%                       additional functionalities within this function. 
+%   extraArgs       - this structure can be used to leverage other
+%                       additional functionalities within this function.
 %                       Its subfields are:
-%     .obstacles:           (matrix) a single obstacle or a list of 
-%                           obstacles with time stamps tau (obstacles must 
-%                           have same time stamp as the solution)
-%     .targets:             (matrix) a single target or a list of targets 
-%                           with time stamps tau (targets must have same 
-%                           time stamp as the solution). This functionality 
-%                           is mainly useful when the targets are 
-%                           time-varying, in case of variational inequality 
-%                           for example; data0 can be used to specify the  
+%     .obstacleFunction:    (matrix) a function describing a single
+%                           obstacle or a list of obstacles with time
+%                           stamps tau (obstacles must have same time stamp
+%                           as the solution)
+%     .targetFunction:      (matrix) the function l(x) that describes a
+%                           stationary goal/unsafe set or a list of targets
+%                           with time stamps tau (targets must have same
+%                           time stamp as the solution). This functionality
+%                           is mainly useful when the targets are
+%                           time-varying, in case of variational inequality
+%                           for example; data0 can be used to specify the
 %                           target otherwise. This is also useful when
 %                           warm-starting with a value function (data0)
 %                           that is not equal to the target/cost function
 %                           (l(x))
-%     .keepLast:            (bool) Only keep data from latest time stamp 
+%     .keepLast:            (bool) Only keep data from latest time stamp
 %                           and delete previous datas
 %     .quiet:               (bool) Don't spit out stuff in command window
 %     .lowMemory:           (bool) use methods to save on memory
 %     .fipOutput:           (bool) flip time stamps of output
-%     .stopInit:            (vector) stop the computation once the  
+%     .stopInit:            (vector) stop the computation once the
 %                           reachable set includes the initial state
-%     .stopSetInclude:      (matrix) stops computation when reachable set 
+%     .stopSetInclude:      (matrix) stops computation when reachable set
 %                           includes this set
-%     .stopSetIntersect:    (matrix) stops computation when reachable set 
+%     .stopSetIntersect:    (matrix) stops computation when reachable set
 %                           intersects this set
-%     .stopLevel:           (double) level of the stopSet to check the 
+%     .stopLevel:           (double) level of the stopSet to check the
 %                           inclusion for. Default level is zero.
 %     .stopConverge:        (bool) set to true to stop the computation when
 %                           it converges
-%     .convergeThreshold:   Max change in each iteration allowed when 
+%     .convergeThreshold:   Max change in each iteration allowed when
 %                           checking convergence
 %     .ignoreBoundary:      Ignores the boundary of the grid when
 %                           calculating convergence
@@ -76,8 +78,8 @@ function [data, tau, extraOuts] = ...
 %                           reinforcement learning" paper
 %     .discountAnneal:      (string) if you want to anneal your discount
 %                           factor over time so it converges to the right
-%                           solution, use this. 
-%                               - 'soft' moves it slowly towards 1 each 
+%                           solution, use this.
+%                               - 'soft' moves it slowly towards 1 each
 %                                 time convergence happens
 %                               - 'hard' sets it to 1 once convergence
 %                                  happens
@@ -92,17 +94,17 @@ function [data, tau, extraOuts] = ...
 %         file name under which temporary data is saved at some frequency in
 %         terms of the number of time steps
 %
-%     .compRegion:          unused for now (meant to limit computation 
+%     .compRegion:          unused for now (meant to limit computation
 %                           region)
 %     .addGaussianNoiseStandardDeviation:
-%           adds random noise 
+%           adds random noise
 %
 %     .makeVideo:           (bool) whether or not to create a video
 %     .videoFilename:       (string) filename of video
 %     .frameRate:           (int) framerate of video
 %     .visualize:           either fill in struct or set to 1 for generic
 %                           visualization
-%                           .plotData:          (struct) information   
+%                           .plotData:          (struct) information
 %                                               required to plot the data:
 %                                               .plotDims: dims to plot
 %                                               .projpt: projection points.
@@ -114,10 +116,10 @@ function [data, tau, extraOuts] = ...
 %                                                        take minimum
 %                                                        (union) for second
 %                                                        dimension
-%                           .sliceLevel:        (double) level set of    
-%                                               reachable set to visualize 
+%                           .sliceLevel:        (double) level set of
+%                                               reachable set to visualize
 %                                               (default is 0)
-%                           .holdOn:            (bool) leave whatever was 
+%                           .holdOn:            (bool) leave whatever was
 %                                                already on the figure?
 %                           .lineWidth:         (int) width of lines
 %                           .viewAngle:         (vector) [az,el] angles for
@@ -130,16 +132,16 @@ function [data, tau, extraOuts] = ...
 %                           .yTitle:            (string) y axis title
 %                           .zTitle:            (string) z axis title
 %                           .dtTime             How often you want to
-%                                               update time stamp on title 
+%                                               update time stamp on title
 %                                               of plot
 %                           .fontSize:          (int) font size of figure
-%                           .deleteLastPlot:    (bool) set to true to   
-%                                               delete previous plot 
+%                           .deleteLastPlot:    (bool) set to true to
+%                                               delete previous plot
 %                                               before displaying next one
-%                           .figNum:            (int) for plotting a 
+%                           .figNum:            (int) for plotting a
 %                                               specific figure number
-%                           .figFilename:       (string) provide this to   
-%                                               save the figures (requires 
+%                           .figFilename:       (string) provide this to
+%                                               save the figures (requires
 %                                               export_fig package)
 %                           .initialValueSet:   (bool) view initial value
 %                                               set
@@ -190,7 +192,7 @@ function [data, tau, extraOuts] = ...
 %
 %
 % -------Updated 11/14/18 by Sylvia Herbert (sylvia.lee.herbert@gmail.com)
-% 
+%
 
 %% Default parameters
 if numel(tau) < 2
@@ -246,12 +248,8 @@ if isfield(extraArgs, 'visualize') && ...
     % reset defaults
     extraArgs.visualize.initialValueSet = 1;
     extraArgs.visualize.valueSet = 1;
-    if numDims(data0) < 3
-        extraArgs.visualize.initialValueFunction = 1;
-        extraArgs.visualize.valueFunction = 1;
-    end
-
-    if isfield(extraArgs, 'RS_level') 
+    
+    if isfield(extraArgs, 'RS_level')
         extraArgs.visualize.sliceLevel = extraArgs.RS_level;
         extraArgs = rmfield(extraArgs, 'RS_level');
         warning(['we now use extraArgs.visualize.sliceLevel instead of'...
@@ -286,7 +284,33 @@ if isfield(extraArgs, 'visualize') && ...
             'of extraArgs.fig_filename']);
     end
     
+    if isfield(extraArgs, 'target')
+        warning(['you wrote extraArgs.target instead of' ...
+            'extraArgs.targetFunction'])
+        extraArgs.targetFunction = extraArgs.target;
+        extraArgs = rmfield(extraArgs, 'target');
+    end
     
+    if isfield(extraArgs, 'targets')
+        warning(['you wrote extraArgs.targets instead of' ...
+            'extraArgs.targetFunction'])
+        extraArgs.targetFunction = extraArgs.targets;
+        extraArgs = rmfield(extraArgs, 'targets');
+    end
+    
+    if isfield(extraArgs, 'obstacle')
+        extraArgs.obstacleFunction = extraArgs.obstacle;
+        warning(['you wrote extraArgs.obstacle instead of' ...
+            'extraArgs.obstacleFunction'])
+        extraArgs = rmfield(extraArgs, 'obstacle');
+    end
+    
+    if isfield(extraArgs, 'obstacles')
+        extraArgs.obstacleFunction = extraArgs.obstacles;
+        warning(['you wrote extraArgs.obstacles instead of' ...
+            'extraArgs.obstacleFunction'])
+        extraArgs = rmfield(extraArgs, 'obstacles');
+    end
 end
 
 
@@ -317,15 +341,9 @@ end
 %---Extract the information about obstacles--------------------------------
 obsMode = 'none';
 
-% if you accidentally write obstacle instead of obstacles, we got you
-% covered
-if isfield(extraArgs, 'obstacle')
-    extraArgs.obstacles = extraArgs.obstacle;
-    warning('you wrote extraArgs.obstacle instead of extraArgs.obstacles')
-end
 
-if isfield(extraArgs, 'obstacles')
-    obstacles = extraArgs.obstacles;
+if isfield(extraArgs, 'obstacleFunction')
+    obstacles = extraArgs.obstacleFunction;
     
     % are obstacles moving or not?
     if numDims(obstacles) == gDim
@@ -346,17 +364,21 @@ if isfield(extraArgs, 'obstacles')
 end
 
 %---Extract the information about targets----------------------------------
-% TO DO: allow targets to be time-varying
+targMode = 'none';
 
-% if you accidentally write target instead of targets, we got you
-% covered
-if isfield(extraArgs, 'target')
-    warning('you wrote extraArgs.target instead of extraArgs.targets')
-    extraArgs.targets = extraArgs.target;
-end
-
-if isfield(extraArgs, 'targets')
-    targets = extraArgs.targets;
+if isfield(extraArgs, 'targetFunction')
+    targets = extraArgs.targetFunction;
+    
+    % is target function moving or not?
+    if numDims(targets) == gDim
+        targMode = 'static';
+        target_i = targets;
+    elseif numDims(targets) == gDim + 1
+        targMode = 'time-varying';
+        target_i = targets(clns{:}, 1);
+    else
+        error('Inconsistent target dimensions!')
+    end
 end
 
 %---Stopping Conditions----------------------------------------------------
@@ -392,14 +414,14 @@ end
 
 %% Visualization
 if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
-   || (isfield(extraArgs, 'makeVideo') && extraArgs.makeVideo)
+        || (isfield(extraArgs, 'makeVideo') && extraArgs.makeVideo)
     % Mark initial iteration, state that for the first plot we need
     % lighting
     timeCount = 0;
     needLight = true;
     
     %---Projection Parameters----------------------------------------------
-
+    
     % Extract the information about plotData
     plotDims = ones(gDim, 1);
     projpt = [];
@@ -425,13 +447,13 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
     
     %---Defaults-----------------------------------------------------------
     
-    if isfield(extraArgs, 'obstacles') && isfield(extraArgs, 'visualize')
+    if isfield(extraArgs, 'obstacleFunction') && isfield(extraArgs, 'visualize')
         if ~isfield(extraArgs.visualize, 'obstacleSet')
             extraArgs.visualize.obstacleSet = 1;
         end
     end
     
-    if isfield(extraArgs, 'targets') && isfield(extraArgs, 'visualize')
+    if isfield(extraArgs, 'targetFunction') && isfield(extraArgs, 'visualize')
         if ~isfield(extraArgs.visualize, 'targetSet')
             extraArgs.visualize.targetSet = 1;
         end
@@ -451,7 +473,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
     else
         deleteLastPlot = false;
     end
-   
+    
     
     view3D = 0;
     
@@ -462,13 +484,11 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
         gPlot = g;
         dataPlot = data0;
         
-        if isfield(extraArgs, 'obstacles')
-            % if strcmp(obsMode, 'time-varying')
+        if isfield(extraArgs, 'obstacleFunction')
             obsPlot = obstacle_i;
         end
-        if isfield(extraArgs, 'targets')
-            % if strcmp(obsMode, 'time-varying')
-            targetsPlot = targets;
+        if isfield(extraArgs, 'targetFunction')
+            targPlot = target_i;
         end
     else
         % if projpt is a cell, project each dimensions separately. This
@@ -479,23 +499,21 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
             plotDimsTemp = ones(size(plotDims));
             gPlot = g;
             dataPlot = data0;
-            if isfield(extraArgs, 'obstacles')
+            if isfield(extraArgs, 'obstacleFunction')
                 obsPlot = obstacle_i;
             end
-            if isfield(extraArgs, 'targets')
-                targetsPlot = targets;
+            if isfield(extraArgs, 'targetFunction')
+                targPlot = target_i;
             end
             
             for ii = length(idx):-1:1
                 plotDimsTemp(idx(ii)) = 0;
-                if isfield(extraArgs, 'obstacles')
-                    %if strcmp(obsMode, 'time-varying')
+                if isfield(extraArgs, 'obstacleFunction')
                     [~, obsPlot] = proj(gPlot, obsPlot, ~plotDimsTemp,...
                         projpt{ii});
                 end
-                if isfield(extraArgs, 'targets')
-                    %if strcmp(obsMode, 'time-varying')
-                    [~, targetsPlot] = proj(gPlot, targetsPlot, ...
+                if isfield(extraArgs, 'targetFunction')
+                    [~, targPlot] = proj(gPlot, targPlot, ...
                         ~plotDimsTemp, projpt{ii});
                 end
                 
@@ -507,13 +525,11 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
         else
             [gPlot, dataPlot] = proj(g, data0, ~plotDims, projpt);
             
-            if isfield(extraArgs, 'obstacles')
-                %if strcmp(obsMode, 'time-varying')
+            if isfield(extraArgs, 'obstacleFunction')
                 [~, obsPlot] = proj(g, obstacle_i, ~plotDims, projpt);
             end
-            if isfield(extraArgs, 'targets')
-                %if strcmp(obsMode, 'time-varying')
-                [~, targetsPlot] = proj(g, targets, ~plotDims, projpt);
+            if isfield(extraArgs, 'targetFunction')
+                [~, targPlot] = proj(g, target_i, ~plotDims, projpt);
             end
         end
         
@@ -545,7 +561,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
             error('cannot open file for writing')
         end
     end
-   
+    
     
     %---Initialize Figure--------------------------------------------------
     
@@ -592,7 +608,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
             extraArgs.visualize.initialValueSet
         
         if ~isfield(extraArgs.visualize,'plotColorVS0')
-            extraArgs.visualize.plotColorVS0 = 'b';
+            extraArgs.visualize.plotColorVS0 = 'g';
         end
         
         extraOuts.hVS0 = visSetIm(...
@@ -616,7 +632,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
         
         % Set up default parameters
         if ~isfield(extraArgs.visualize,'plotColorVF0')
-            extraArgs.visualize.plotColorVF0 = 'b';
+            extraArgs.visualize.plotColorVF0 = 'g';
         end
         
         if ~isfield(extraArgs.visualize,'plotAlphaVF0')
@@ -640,7 +656,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
             extraArgs.visualize.plotColorTS = 'g';
         end
         
-        extraOuts.hTS = visSetIm(gPlot, targetsPlot, ...
+        extraOuts.hTS = visSetIm(gPlot, targPlot, ...
             extraArgs.visualize.plotColorTS, sliceLevel, eAT_visSetIm);
         
         if isfield(extraArgs.visualize,'plotAlphaTS')
@@ -667,7 +683,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
         end
         
         % Visualize Target function (hTF)
-        [extraOuts.hTF]= visFuncIm(gPlot,targetsPlot,...
+        [extraOuts.hTF]= visFuncIm(gPlot,targPlot,...
             extraArgs.visualize.plotColorTF,...
             extraArgs.visualize.plotAlphaTF);
     end
@@ -791,7 +807,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
             c.Position = [-30 -30 -30];
         end
     end
- 
+    
     % Grid and axis
     if isfield(extraArgs.visualize, 'viewGrid') && ...
             ~extraArgs.visualize.viewGrid
@@ -810,7 +826,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
     
     if isfield(extraArgs.visualize, 'yTitle')
         ylabel(extraArgs.visualize.yTitle,'interpreter','latex')
-    end 
+    end
     
     if isfield(extraArgs.visualize, 'zTitle')
         zlabel(extraArgs.visualize.zTitle,'interpreter','latex')
@@ -842,7 +858,7 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
 end
 
 
-%% Extract cdynamical system if needed
+%% Extract dynamical system if needed
 if isfield(schemeData, 'dynSys')
     schemeData.hamFunc = @genericHam;
     schemeData.partialFunc = @genericPartial;
@@ -892,18 +908,18 @@ if isfield(extraArgs, 'addGaussianNoiseStandardDeviation')
     % Save all the previous terms as the deterministic component in detFunc
     detFunc = schemeFunc;
     detData = schemeData;
-      % The full computation scheme will include this added term so clear
-      % out the schemeFunc so we can pack everything back in later with the
-      % new stuff
+    % The full computation scheme will include this added term so clear
+    % out the schemeFunc so we can pack everything back in later with the
+    % new stuff
     clear schemeFunc schemeData;
-
+    
     % Create the Hessian term corresponding to white noise diffusion
     stochasticFunc = @termTraceHessian;
     stochasticData.grid = g;
     stochasticData.L = extraArgs.addGaussianNoiseStandardDeviation';
     stochasticData.R = extraArgs.addGaussianNoiseStandardDeviation;
     stochasticData.hessianFunc = @hessianSecond;
-
+    
     % Add the (saved) deterministic terms and the (new) stochastic term
     % together into the complete scheme
     schemeFunc = @termSum;
@@ -983,7 +999,7 @@ for i = istart:length(tau)
         y0 = data(clns{:}, i-1);
     end
     y = y0(:);
-
+    
     
     tNow = tau(i-1);
     
@@ -1011,12 +1027,12 @@ for i = istart:length(tau)
         end
         
         
- %% Here's where we do the min/max for BRTS or nothing for BRSs.  Note that
- %  if we're doing discounting there are two methods: Kene's and Jaime's.
- %  Kene requires that we do the compmethod inside of the discounting.
- %  Jaime's does not.  Thus why the if statements are a little funky.
- 
-        % 1. If not discounting at all OR not discounting using Kene's 
+        %% Here's where we do the min/max for BRTS or nothing for BRSs.  Note that
+        %  if we're doing discounting there are two methods: Kene's and Jaime's.
+        %  Kene requires that we do the compmethod inside of the discounting.
+        %  Jaime's does not.  Thus why the if statements are a little funky.
+        
+        % 1. If not discounting at all OR not discounting using Kene's
         %    method, do normal compMethod first
         if ~isfield(extraArgs, 'discountMode') || ...
                 ~strcmp(extraArgs.discountMode, 'Kene')
@@ -1048,7 +1064,7 @@ for i = istart:length(tau)
             elseif strcmp(compMethod, 'maxVWithL')...
                     || strcmp(compMethod, 'maxVwithL') ...
                     || strcmp(compMethod, 'maxVWithTarget')
-                if ~isfield(extraArgs, 'targets')
+                if ~isfield(extraArgs, 'targetFunction')
                     error('Need to define target function l(x)!')
                 end
                 if numDims(targets) == gDim
@@ -1060,7 +1076,7 @@ for i = istart:length(tau)
             elseif strcmp(compMethod, 'minVWithL') ...
                     || strcmp(compMethod, 'minVwithL') ...
                     || strcmp(compMethod, 'minVWithTarget')
-                if ~isfield(extraArgs, 'targets')
+                if ~isfield(extraArgs, 'targetFunction')
                     error('Need to define target function l(x)!')
                 end
                 if numDims(targets) == gDim
@@ -1075,7 +1091,7 @@ for i = istart:length(tau)
             end
             
             
-            % 2. If doing discounting but not using Kene's method, default 
+            % 2. If doing discounting but not using Kene's method, default
             %    to Jaime's method from ICRA 2019 paper
             if isfield(extraArgs, 'discountFactor') && ...
                     extraArgs.discountFactor && ...
@@ -1083,7 +1099,7 @@ for i = istart:length(tau)
                     strcmp(extraArgs.discountMode,'Kene'))
                 y = extraArgs.discountFactor*y;
                 
-                if isfield(extraArgs, 'targets')
+                if isfield(extraArgs, 'targetFunction')
                     y = y + ...
                         (1-extraArgs.discountFactor).*extraArgs.targets(:);
                 else
@@ -1101,7 +1117,7 @@ for i = istart:length(tau)
                 isfield(extraArgs, 'discountMode') && ...
                 strcmp(extraArgs.discountMode,'Kene')
             
-            if ~isfield(extraArgs, 'targets')
+            if ~isfield(extraArgs, 'targetFunction')
                 error('Need to define target function l(x)!')
             end
             
@@ -1137,15 +1153,23 @@ for i = istart:length(tau)
         
         
         
-    
+        
         % "Mask" using obstacles
-        if isfield(extraArgs, 'obstacles')
+        if isfield(extraArgs, 'obstacleFunction')
             if strcmp(obsMode, 'time-varying')
                 obstacle_i = obstacles(clns{:}, i);
             end
             y = max(y, -obstacle_i(:));
-        end      
-
+        end
+        
+        
+        % Update target function
+        if isfield(extraArgs, 'targetFunction')
+            if strcmp(targMode, 'time-varying')
+                target_i = targets(clns{:}, i);
+            end
+        end
+        
         
     end
     
@@ -1164,25 +1188,25 @@ for i = istart:length(tau)
         data(clns{:}, i) = data_i;
     end
     
-        % If we're stopping once converged, print how much change there was in
-        % the last iteration
-        if stopConverge
-            if isfield(extraArgs,'ignoreBoundary') &&...
-                    extraArgs.ignoreBoundary
-                [~, dataNew] = truncateGrid(...
-                    g, data_i, g.min+4*g.dx, g.max-4*g.dx);
-                change = max(abs(dataNew(:)-dataTrimmed(:)));
-                dataTrimmed = dataNew;
-                if ~quiet
-                    fprintf('Max change since last iteration: %f\n', change)
-                end
-            else
-                change = max(abs(y - y0(:)));
-                if ~quiet
-                    fprintf('Max change since last iteration: %f\n', change)
-                end
+    % If we're stopping once converged, print how much change there was in
+    % the last iteration
+    if stopConverge
+        if isfield(extraArgs,'ignoreBoundary') &&...
+                extraArgs.ignoreBoundary
+            [~, dataNew] = truncateGrid(...
+                g, data_i, g.min+4*g.dx, g.max-4*g.dx);
+            change = max(abs(dataNew(:)-dataTrimmed(:)));
+            dataTrimmed = dataNew;
+            if ~quiet
+                fprintf('Max change since last iteration: %f\n', change)
+            end
+        else
+            change = max(abs(y - y0(:)));
+            if ~quiet
+                fprintf('Max change since last iteration: %f\n', change)
             end
         end
+    end
     
     %% If commanded, stop the reachable set computation once it contains
     % the initial state.
@@ -1261,7 +1285,7 @@ for i = istart:length(tau)
         timeCount = timeCount + 1;
         
         %---Delete Previous Plot-------------------------------------------
-
+        
         if deleteLastPlot
             if isfield(extraOuts, 'hOS') && strcmp(obsMode, 'time-varying')
                 if iscell(extraOuts.hOS)
@@ -1280,6 +1304,25 @@ for i = istart:length(tau)
                     end
                 else
                     delete(extraOuts.hOF);
+                end
+            end
+            if isfield(extraOuts, 'hTS') && strcmp(targMode, 'time-varying')
+                if iscell(extraOuts.hTS)
+                    for hi = 1:length(extraOuts.hTS)
+                        delete(extraOuts.hTS{hi})
+                    end
+                else
+                    delete(extraOuts.hTS);
+                end
+            end
+            
+            if isfield(extraOuts, 'hTF') && strcmp(targMode, 'time-varying')
+                if iscell(extraOuts.hTF)
+                    for hi = 1:length(extraOuts.hTF)
+                        delete(extraOuts.hTF{hi})
+                    end
+                else
+                    delete(extraOuts.hTF);
                 end
             end
             if isfield(extraOuts, 'hVSHeat')
@@ -1309,7 +1352,7 @@ for i = istart:length(tau)
                     delete(extraOuts.hVF);
                 end
             end
-    
+            
         end
         
         %---Perform Projections--------------------------------------------
@@ -1321,6 +1364,10 @@ for i = istart:length(tau)
             
             if strcmp(obsMode, 'time-varying')
                 obsPlot = obstacle_i;
+            end
+            
+            if strcmp(targMode, 'time-varying')
+                targPlot = target_i;
             end
         else
             % if projpt is a cell, project each dimensions separately. This
@@ -1335,10 +1382,19 @@ for i = istart:length(tau)
                     obsPlot = obstacle_i;
                 end
                 
+                if strcmp(targMode, 'time-varying')
+                    targPlot = target_i;
+                end
+                
                 for ii = length(idx):-1:1
                     plotDimsTemp(idx(ii)) = 0;
                     if strcmp(obsMode, 'time-varying')
                         [~, obsPlot] = proj(gPlot, obsPlot, ~plotDimsTemp,...
+                            projpt{ii});
+                    end
+                    
+                    if strcmp(targMode, 'time-varying')
+                        [~, targPlot] = proj(gPlot, targPlot, ~plotDimsTemp,...
                             projpt{ii});
                     end
                     
@@ -1351,8 +1407,11 @@ for i = istart:length(tau)
                 [gPlot, dataPlot] = proj(g, data_i, ~plotDims, projpt);
                 
                 if strcmp(obsMode, 'time-varying')
-                    %if strcmp(obsMode, 'time-varying')
                     [~, obsPlot] = proj(g, obstacle_i, ~plotDims, projpt);
+                end
+                
+                if strcmp(targMode, 'time-varying')
+                    [~, targPlot] = proj(g, obstacle_i, ~plotDims, projpt);
                 end
             end
             
@@ -1361,7 +1420,34 @@ for i = istart:length(tau)
         
         
         
-
+        %% Visualize Target Function/Set
+        
+        %---Visualize Target Set-----------------------------------------------
+        if strcmp(targMode, 'time-varying') ...
+                && isfield(extraArgs.visualize, 'targetSet') ...
+                && extraArgs.visualize.targetSet
+            
+            % Visualize obstacle set (hOS)
+            extraOuts.hTS = visSetIm(gPlot, targPlot, ...
+                extraArgs.visualize.plotColorTS, sliceLevel, eAT_visSetIm);
+            
+            if isfield(extraArgs.visualize,'plotAlphaTS')
+                extraOuts.hTS.FaceAlpha = extraArgs.visualize.plotAlphaTS;
+            end
+            
+        end
+        
+        %---Visualize Target Function------------------------------------------
+        if  strcmp(targMode, 'time-varying') ...
+                && isfield(extraArgs.visualize, 'targetFunction')...
+                && extraArgs.visualize.targetFunction
+            
+            % Visualize function
+            [extraOuts.hTF]= visFuncIm(gPlot,targPlot,...
+                extraArgs.visualize.plotColorTF,...
+                extraArgs.visualize.plotAlphaTF);
+        end
+        
         %% Visualize Obstacle Function/Set
         
         %---Visualize Obstacle Set-----------------------------------------
@@ -1373,7 +1459,9 @@ for i = istart:length(tau)
             extraOuts.hOS = visSetIm(gPlot, obsPlot, ...
                 extraArgs.visualize.plotColorOS, sliceLevel, eAO_visSetIm);
             
-        
+            if isfield(extraArgs.visualize,'plotAlphaOS')
+                extraOuts.hOS.FaceAlpha = extraArgs.visualize.plotAlphaOS;
+            end
         end
         
         %---Visualize Obstacle Function------------------------------------
@@ -1413,14 +1501,14 @@ for i = istart:length(tau)
                 extraArgs.visualize.plotAlphaVF);
             
         end
-
+        
         %---Update Title---------------------------------------------------
         if ~isfield(extraArgs.visualize, 'dtTime') &&...
                 ~isfield(extraArgs.visualize, 'convergeTitle')
             title(['t = ' num2str(tNow,'%4.2f') ' s'])
         elseif isfield(extraArgs.visualize, 'dtTime') && floor(...
                 extraArgs.visualize.dtTime/((tau(end)-tau(1))/length(tau))) ...
-            == timeCount
+                == timeCount
             
             title(['t = ' num2str(tNow,'%4.2f') ' s'])
             timeCount = 0;
@@ -1485,7 +1573,7 @@ switch(dissType)
     case 'locallocal'
         dissFunc = @artificialDissipationLLLF;
     otherwise
-        error('Unknown dissipation function %s', dissFunc);
+        error('Unknown dissipation function %s', dissType);
 end
 
 % Accuracy

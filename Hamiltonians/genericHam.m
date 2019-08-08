@@ -9,7 +9,7 @@ if ~isfield(schemeData, 'uMode')
 end
 
 if ~isfield(schemeData, 'dMode')
-  schemeData.dMode = 'min';
+  schemeData.dMode = 'max';
 end
 
 if ~isfield(schemeData, 'tMode')
