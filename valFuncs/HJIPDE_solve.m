@@ -420,6 +420,32 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
     timeCount = 0;
     needLight = true;
     
+    
+    %---Video Parameters---------------------------------------------------
+    
+    % If we're making a video, set up the parameters
+    if isfield(extraArgs, 'makeVideo') && extraArgs.makeVideo
+        if ~isfield(extraArgs, 'videoFilename')
+            extraArgs.videoFilename = ...
+                [datestr(now,'YYYYMMDD_hhmmss') '.mp4'];
+        end
+        
+        vout = VideoWriter(extraArgs.videoFilename,'MPEG-4');
+        vout.Quality = 100;
+        if isfield(extraArgs, 'frameRate')
+            vout.FrameRate = extraArgs.frameRate;
+        else
+            vout.FrameRate = 30;
+        end
+        
+        try
+            vout.open;
+        catch
+            error('cannot open file for writing')
+        end
+    end
+    
+    
     %---Projection Parameters----------------------------------------------
     
     % Extract the information about plotData
@@ -538,29 +564,6 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
     end
     
     
-    %---Video Parameters---------------------------------------------------
-    
-    % If we're making a video, set up the parameters
-    if isfield(extraArgs, 'makeVideo') && extraArgs.makeVideo
-        if ~isfield(extraArgs, 'videoFilename')
-            extraArgs.videoFilename = ...
-                [datestr(now,'YYYYMMDD_hhmmss') '.mp4'];
-        end
-        
-        vout = VideoWriter(extraArgs.videoFilename,'MPEG-4');
-        vout.Quality = 100;
-        if isfield(extraArgs, 'frameRate')
-            vout.FrameRate = extraArgs.frameRate;
-        else
-            vout.FrameRate = 30;
-        end
-        
-        try
-            vout.open;
-        catch
-            error('cannot open file for writing')
-        end
-    end
     
     
     %---Initialize Figure--------------------------------------------------
