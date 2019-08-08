@@ -1548,7 +1548,7 @@ for i = istart:length(tau)
 end
 
 %% Finish up
-if isfield(extraArgs, 'disountFactor') && extraArgs.discountFactor
+if isfield(extraArgs, 'discountFactor') && extraArgs.discountFactor
     extraOuts.discountFactor = extraArgs.discountFactor;
 end
 
