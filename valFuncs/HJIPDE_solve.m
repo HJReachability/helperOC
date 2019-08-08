@@ -200,7 +200,7 @@ if numel(tau) < 2
 end
 
 if nargin < 4
-    compMethod = 'minVWithV0';
+    compMethod = 'minVOverTime';
 end
 
 if nargin < 5
