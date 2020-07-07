@@ -238,16 +238,18 @@ if isfield(extraArgs, 'stopSet')
     warning('we now use stopSetInclude instead of stopSet');
 end
 
-if isfield(extraArgs, 'visualize') && ...
-        ~isstruct(extraArgs.visualize) && ...
-        extraArgs.visualize
+if isfield(extraArgs, 'visualize')
     
-    % remove visualize boolean
-    extraArgs = rmfield(extraArgs, 'visualize');
     
-    % reset defaults
-    extraArgs.visualize.initialValueSet = 1;
-    extraArgs.visualize.valueSet = 1;
+    if ~isstruct(extraArgs.visualize) && ...
+            extraArgs.visualize
+        % remove visualize boolean
+        extraArgs = rmfield(extraArgs, 'visualize');
+        
+        % reset defaults
+        extraArgs.visualize.initialValueSet = 1;
+        extraArgs.visualize.valueSet = 1;
+    end
     
     if isfield(extraArgs, 'RS_level')
         extraArgs.visualize.sliceLevel = extraArgs.RS_level;
@@ -1060,7 +1062,7 @@ for i = istart:length(tau)
                 y = min(y, yLast);
             elseif strcmp(compMethod, 'maxVOverTime')
                 y = max(y, yLast);
-            elseif strcmp(compMethod, 'minVWithV0')n%Min with data0
+            elseif strcmp(compMethod, 'minVWithV0')%Min with data0
                 y = min(y,data0(:));
             elseif strcmp(compMethod, 'maxVWithV0')
                 y = max(y,data0(:));
@@ -1125,9 +1127,9 @@ for i = istart:length(tau)
             end
             
             % move everything below 0
-            maxVal = max(abs(extraArgs.targets(:)));
+            maxVal = max(abs(extraArgs.targetFunction(:)));
             ytemp = y - maxVal;
-            targettemp = extraArgs.targets - maxVal;
+            targettemp = extraArgs.targetFunction - maxVal;
             
             % Discount
             ytemp = extraArgs.discountFactor*ytemp;
@@ -1521,6 +1523,8 @@ for i = istart:length(tau)
                 extraArgs.visualize.convergeTitle
             title(['t = ' num2str(tNow, '%4.2f') ...
                 ' s, max change = ' num2str(change,'%4.4f')])
+        else
+            title(['t = ' num2str(tNow,'%4.2f') ' s'])
         end
         drawnow;
         
