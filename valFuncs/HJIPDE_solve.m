@@ -292,7 +292,11 @@ if (isfield(extraArgs, 'visualize') && extraArgs.visualize)...
     
     % Number of dimensions to be plotted and to be projected
     pDims = nnz(plotDims);
-    projDims = length(projpt);
+    if isnumeric(projpt)
+        projDims = length(projpt);
+    else
+        projDims = gDim - pDims;
+    end
     
     % Basic Checks
     if(length(plotDims) ~= gDim || projDims ~= (gDim - pDims))
@@ -642,6 +646,7 @@ for i = istart:length(tau)
         if ~quiet
             fprintf('  Computing [%f %f]...\n', tNow, tau(i))
         end
+
         
         [tNow, y] = feval(integratorFunc, schemeFunc, [tNow tau(i)], y, ...
             integratorOptions, schemeData);
@@ -762,8 +767,12 @@ for i = istart:length(tau)
         timeCount = timeCount + 1;
         % Number of dimensions to be plotted and to be projected
         pDims = nnz(plotDims);
-        projDims = length(projpt);
-        
+        if isnumeric(projpt)
+            projDims = length(projpt);
+        else
+            projDims = gDim - pDims;
+        end
+
         % Basic Checks
         if(length(plotDims) ~= gDim || projDims ~= (gDim - pDims))
             error('Mismatch between plot and grid dimensions!');

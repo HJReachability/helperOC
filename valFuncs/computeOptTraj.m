@@ -13,6 +13,7 @@ function [traj, traj_tau] = computeOptTraj(g, data, tau, dynSys, extraArgs)
 %   extraArgs
 %     .uMode        - specifies whether the control u aims to minimize or
 %                     maximize the value function
+%     .dMode        - same for disurbance
 %     .visualize    - set to true to visualize results
 %     .fig_num:   List if you want to plot on a specific figure number
 %     .projDim      - set the dimensions that should be projected away when
@@ -30,6 +31,10 @@ subSamples = 4;
 
 if isfield(extraArgs, 'uMode')
   uMode = extraArgs.uMode;
+end
+
+if isfield(extraArgs, 'dMode')
+  dMode = extraArgs.dMode;
 end
 
 % Visualization
@@ -73,7 +78,7 @@ while iter <= tauLength
   upper = tauLength;
   lower = tEarliest;
   
-  tEarliest = find_earliest_BRS_ind(g, data, dynSys.x, upper, lower);
+  tEarliest = lower; %find_earliest_BRS_ind(g, data, dynSys.x, upper, lower);
    
   % BRS at current time
   BRS_at_t = data(clns{:}, tEarliest);
@@ -105,7 +110,8 @@ while iter <= tauLength
   for j = 1:subSamples
     deriv = eval_u(g, Deriv, dynSys.x);
     u = dynSys.optCtrl(tau(tEarliest), dynSys.x, deriv, uMode);
-    dynSys.updateState(u, dtSmall, dynSys.x);
+    d = dynSys.optDstb(tau(tEarliest), dynSys.x, deriv, dMode);
+    dynSys.updateState(u, dtSmall, dynSys.x, d);
   end
   
   % Record new point on nominal trajectory
