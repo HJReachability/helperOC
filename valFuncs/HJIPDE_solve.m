@@ -486,6 +486,15 @@ if (isfield(extraArgs, 'visualize') && isstruct(extraArgs.visualize))...
             extraArgs.visualize.targetSet = 1;
         end
     end
+    grid on
+    
+    % Number of dimensions to be plotted and to be projected
+    pDims = nnz(plotDims);
+    if isnumeric(projpt)
+        projDims = length(projpt);
+    else
+        projDims = gDim - pDims;
+    end
     
     % Set level set slice
     if isfield(extraArgs.visualize, 'sliceLevel')
@@ -1019,6 +1028,7 @@ for i = istart:length(tau)
         if ~quiet
             fprintf('  Computing [%f %f]...\n', tNow, tau(i))
         end
+
         
         % Solve hamiltonian and apply to value function (y) to get updated
         % value function
@@ -1288,6 +1298,20 @@ for i = istart:length(tau)
             (isstruct(extraArgs.visualize) || extraArgs.visualize == 1))...
             || (isfield(extraArgs, 'makeVideo') && extraArgs.makeVideo)
         timeCount = timeCount + 1;
+
+        % Number of dimensions to be plotted and to be projected
+        pDims = nnz(plotDims);
+        if isnumeric(projpt)
+            projDims = length(projpt);
+        else
+            projDims = gDim - pDims;
+        end
+
+        % Basic Checks
+        if(length(plotDims) ~= gDim || projDims ~= (gDim - pDims))
+            error('Mismatch between plot and grid dimensions!');
+        end
+
         
         %---Delete Previous Plot-------------------------------------------
         
