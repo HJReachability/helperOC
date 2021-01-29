@@ -69,7 +69,6 @@ wMax = 1;
 uMode = 'min';
 % do dStep2 here
 
-
 %% Pack problem parameters
 
 % Define dynamic system
@@ -114,18 +113,9 @@ HJIextraArgs.visualize.deleteLastPlot = true; %delete previous plot as you updat
 
 %% Compute optimal trajectory from some initial state
 if compTraj
-  pause
   
   %set the initial state
   xinit = [2, 2, -pi];
-  
-  figure(6)
-  clf
-  h = visSetIm(g, data(:,:,:,end));
-  h.FaceAlpha = .3;
-  hold on
-  s = scatter3(xinit(1), xinit(2), xinit(3));
-  s.SizeData = 70;
   
   %check if this initial state is in the BRS/BRT
   %value = eval_u(g, data, x)
@@ -150,6 +140,28 @@ if compTraj
     % computeOptTraj(g, data, tau, dynSys, extraArgs)
     [traj, traj_tau] = ...
       computeOptTraj(g, dataTraj, tau2, dCar, TrajextraArgs);
+  
+    figure(6)
+    clf
+    h = visSetIm(g, data(:,:,:,end));
+    h.FaceAlpha = .3;
+    hold on
+    s = scatter3(xinit(1), xinit(2), xinit(3));
+    s.SizeData = 70;
+    title('The reachable set at the end and x_init')
+    hold off
+  
+    %plot traj
+    figure(4)
+    plot(traj(1,:), traj(2,:))
+    hold on
+    xlim([-5 5])
+    ylim([-5 5])
+    % add the target set to that
+    [g2D, data2D] = proj(g, data0, [0 0 1]);
+    visSetIm(g2D, data2D, 'green');
+    title('2D projection of the trajectory & target set')
+    hold off
   else
     error(['Initial state is not in the BRS/BRT! It have a value of ' num2str(value,2)])
   end
