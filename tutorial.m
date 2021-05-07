@@ -137,6 +137,7 @@ if compTraj
     dCar.x = xinit; %set initial state of the dubins car
 
     TrajextraArgs.uMode = uMode; %set if control wants to min or max
+    TrajextraArgs.dMode = 'max';
     TrajextraArgs.visualize = true; %show plot
     TrajextraArgs.fig_num = 2; %figure number
     

@@ -39,6 +39,10 @@ if iscell(u)
   u = cell2mat(u);
 end
 
+if ~isempty(d) && iscell(d)
+  d = cell2mat(d);
+end
+
 % Do nothing if control is not a number
 if isnan(u)
   warning('u = NaN')
