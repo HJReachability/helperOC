@@ -1,7 +1,7 @@
 function dx = dynamics(obj, ~, x, u, d)
 % Dynamics of the Dubins Car
-%    \dot{x}_1 = v * cos(x_3)
-%    \dot{x}_2 = v * sin(x_3)
+%    \dot{x}_1 = v * cos(x_3) + d1
+%    \dot{x}_2 = v * sin(x_3) + d2
 %    \dot{x}_3 = w
 %   Control: u = w;
 %
