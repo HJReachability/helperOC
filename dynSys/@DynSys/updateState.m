@@ -39,8 +39,7 @@ if iscell(u)
   u = cell2mat(u);
 end
 
-% convert d to vector if needed
-if iscell(d)
+if ~isempty(d) && iscell(d)
   d = cell2mat(d);
 end
 
