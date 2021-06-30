@@ -110,7 +110,11 @@ while iter <= tauLength
   for j = 1:subSamples
     deriv = eval_u(g, Deriv, dynSys.x);
     u = dynSys.optCtrl(tau(tEarliest), dynSys.x, deriv, uMode);
-    d = dynSys.optDstb(tau(tEarliest), dynSys.x, deriv, dMode);
+    if exist('dMode', 'var')
+        d = dynSys.optDstb(tau(tEarliest), dynSys.x, deriv, dMode);
+    else
+        d = dynSys.optDstb(tau(tEarliest), dynSys.x, deriv);
+    end
     dynSys.updateState(u, dtSmall, dynSys.x, d);
   end
   
