@@ -78,7 +78,7 @@ while iter <= tauLength
   upper = tauLength;
   lower = tEarliest;
   
-  tEarliest = lower; %find_earliest_BRS_ind(g, data, dynSys.x, upper, lower);
+  tEarliest = find_earliest_BRS_ind(g, data, dynSys.x, upper, lower);
    
   % BRS at current time
   BRS_at_t = data(clns{:}, tEarliest);
