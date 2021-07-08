@@ -358,11 +358,21 @@ if isfield(extraArgs, 'obstacleFunction')
         error('Inconsistent obstacle dimensions!')
     end
     
-    % We always take the max between the data and the obstacles
-    % note that obstacles are negated.  That's because if you define the
-    % obstacles using something like ShapeSphere, it sets it up as a
-    % target. To make it an obstacle we just negate that.
-    data0 = max(data0, -obstacle_i);
+    % We implement two variants of incorporating obstacles
+    % 1) Setting the speed of the front to 0 when it reaches the obstacle
+    % 2) The Reach-Avoid formulation (see Jaime's Thesis & Paper)
+    
+   
+    if isfield(extraArgs, 'obstacle_mask')
+        % 1) make obstacles to 0-1 masks (1 where no obstacle, 0 in obstacle)
+        obstacle_mask_i = (obstacle_i > 0);
+    else
+        % We always take the max between the data and the obstacles
+        % note that obstacles are negated.  That's because if you define the
+        % obstacles using something like ShapeSphere, it sets it up as a
+        % target. To make it an obstacle we just negate that.
+        data0 = max(data0, -obstacle_i);
+    end
 end
 
 %---Extract the information about targets----------------------------------
@@ -873,11 +883,17 @@ end
 
 
 %% Extract dynamical system if needed
+% Note: Marius changed this for the case when Lagrangian is not 0!
 if isfield(schemeData, 'dynSys')
-    schemeData.hamFunc = @genericHam;
+%     schemeData.hamFunc = @genericHam;
     schemeData.partialFunc = @genericPartial;
 end
 
+if ~isfield(schemeData, 'hamFunc')
+  schemeData.hamFunc = @genericHam;
+end
+
+%% continue
 stopConverge = false;
 if isfield(extraArgs, 'stopConverge')
     stopConverge = extraArgs.stopConverge;
@@ -1028,6 +1044,17 @@ for i = istart:length(tau)
         if ~quiet
             fprintf('  Computing [%f %f]...\n', tNow, tau(i))
         end
+        
+        % obstacle value function or mask if defined
+        if isfield(extraArgs, 'obstacleFunction')
+            if strcmp(obsMode, 'time-varying')
+                obstacle_i = obstacles(clns{:}, i);
+            end
+            if isfield(extraArgs, 'obstacle_mask')
+                obstacle_mask_i = (obstacle_i >0);
+                schemeData.obstacle_mask_i = obstacle_mask_i;
+            end
+        end
 
         
         % Solve hamiltonian and apply to value function (y) to get updated
@@ -1166,14 +1193,8 @@ for i = istart:length(tau)
             error('check your discountFactor and discountMode')
         end
         
-        
-        
-        
-        % "Mask" using obstacles
+        % "Mask" using obstacles (Reach-Avoid Formulation)
         if isfield(extraArgs, 'obstacleFunction')
-            if strcmp(obsMode, 'time-varying')
-                obstacle_i = obstacles(clns{:}, i);
-            end
             y = max(y, -obstacle_i(:));
         end
         
