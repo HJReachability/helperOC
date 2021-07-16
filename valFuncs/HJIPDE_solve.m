@@ -363,7 +363,8 @@ if isfield(extraArgs, 'obstacleFunction')
     %    Note: this only works for static obstacles, time-varying is
     %    possible but needs modifications to the Hamiltonian.
     %    See paper: "Path planning in multi-scale ocean flows: Coordination
-    %    and dynamic obstacles"
+    %    and dynamic obstacles". Also doesn't work with adversarial
+    %    disturbance.
     % 2) The Reach-Avoid formulation (see Jaime's Thesis & Paper)
     
    
