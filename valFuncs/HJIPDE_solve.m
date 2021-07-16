@@ -883,14 +883,9 @@ end
 
 
 %% Extract dynamical system if needed
-% Note: Marius changed this for the case when Lagrangian is not 0!
 if isfield(schemeData, 'dynSys')
-%     schemeData.hamFunc = @genericHam;
+    schemeData.hamFunc = @genericHam;
     schemeData.partialFunc = @genericPartial;
-end
-
-if ~isfield(schemeData, 'hamFunc')
-  schemeData.hamFunc = @genericHam;
 end
 
 %% continue
