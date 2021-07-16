@@ -218,6 +218,10 @@ g = schemeData.grid;
 gDim = g.dim;
 clns = repmat({':'}, 1, gDim);
 
+%% Give a warning when running cost is used
+if schemeData.dynSys.runningCost
+    warning('Beware: with a running cost, the zero-level set has not the reachable set meaning anymore. Make sure that optCtrl and optDstb are subset with running cost.');
+end
 %% Backwards compatible
 
 if isfield(extraArgs, 'low_memory')

@@ -74,6 +74,11 @@ if isprop(dynSys, 'TIdim') && ~isempty(dynSys.TIdim)
   hamValue = hamValue + TIderiv*TIdx{1};
 end
 
+%% Optional: add the running cost term if present
+if schemeData.dynSys.runningCost
+    hamValue = hamValue + dynSys.runningCostfunc(t, schemeData.grid.xs, u, d);
+end
+
 %% Negate hamValue if backward reachable set
 if strcmp(schemeData.tMode, 'backward')
   hamValue = -hamValue;
