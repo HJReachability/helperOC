@@ -360,12 +360,20 @@ if isfield(extraArgs, 'obstacleFunction')
     
     % We implement two variants of incorporating obstacles
     % 1) Setting the speed of the front to 0 when it reaches the obstacle
+    %    Note: this only works for static obstacles, time-varying is
+    %    possible but needs modifications to the Hamiltonian.
+    %    See paper: "Path planning in multi-scale ocean flows: Coordination
+    %    and dynamic obstacles"
     % 2) The Reach-Avoid formulation (see Jaime's Thesis & Paper)
     
    
     if isfield(extraArgs, 'obstacle_mask')
         % 1) make obstacles to 0-1 masks (1 where no obstacle, 0 in obstacle)
+        if strcmp(obsMode, 'time-varying')
+            error('This obstacle method is only implemented for static obstacles')
+        end
         obstacle_mask_i = (obstacle_i > 0);
+        schemeData.obstacle_mask_i = obstacle_mask_i;
     else
         % We always take the max between the data and the obstacles
         % note that obstacles are negated.  That's because if you define the
@@ -1039,17 +1047,6 @@ for i = istart:length(tau)
         if ~quiet
             fprintf('  Computing [%f %f]...\n', tNow, tau(i))
         end
-        
-        % obstacle value function or mask if defined
-        if isfield(extraArgs, 'obstacleFunction')
-            if strcmp(obsMode, 'time-varying')
-                obstacle_i = obstacles(clns{:}, i);
-            end
-            if isfield(extraArgs, 'obstacle_mask')
-                obstacle_mask_i = (obstacle_i >0);
-                schemeData.obstacle_mask_i = obstacle_mask_i;
-            end
-        end
 
         
         % Solve hamiltonian and apply to value function (y) to get updated
@@ -1189,10 +1186,12 @@ for i = istart:length(tau)
         end
         
         % "Mask" using obstacles (Reach-Avoid Formulation)
-        if isfield(extraArgs, 'obstacleFunction')
+        if isfield(extraArgs, 'obstacleFunction') && ~isfield(extraArgs, 'obstacle_mask')
+            if strcmp(obsMode, 'time-varying')
+                obstacle_i = obstacles(clns{:}, i);
+            end
             y = max(y, -obstacle_i(:));
         end
-        
         
         % Update target function
         if isfield(extraArgs, 'targetFunction')
@@ -1200,7 +1199,6 @@ for i = istart:length(tau)
                 target_i = targets(clns{:}, i);
             end
         end
-        
         
     end
     
