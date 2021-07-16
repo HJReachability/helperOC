@@ -218,6 +218,10 @@ g = schemeData.grid;
 gDim = g.dim;
 clns = repmat({':'}, 1, gDim);
 
+%% Give a warning when running cost is used
+if schemeData.dynSys.runningCost
+    warning('Beware: with a running cost, the zero-level set has not the reachable set meaning anymore. Make sure that optCtrl and optDstb are subset with running cost.');
+end
 %% Backwards compatible
 
 if isfield(extraArgs, 'low_memory')
@@ -358,11 +362,30 @@ if isfield(extraArgs, 'obstacleFunction')
         error('Inconsistent obstacle dimensions!')
     end
     
-    % We always take the max between the data and the obstacles
-    % note that obstacles are negated.  That's because if you define the
-    % obstacles using something like ShapeSphere, it sets it up as a
-    % target. To make it an obstacle we just negate that.
-    data0 = max(data0, -obstacle_i);
+    % We implement two variants of incorporating obstacles
+    % 1) Setting the speed of the front to 0 when it reaches the obstacle
+    %    Note: this only works for static obstacles, time-varying is
+    %    possible but needs modifications to the Hamiltonian.
+    %    See paper: "Path planning in multi-scale ocean flows: Coordination
+    %    and dynamic obstacles". Also doesn't work with adversarial
+    %    disturbance.
+    % 2) The Reach-Avoid formulation (see Jaime's Thesis & Paper)
+    
+   
+    if isfield(extraArgs, 'obstacle_mask')
+        % 1) make obstacles to 0-1 masks (1 where no obstacle, 0 in obstacle)
+        if strcmp(obsMode, 'time-varying')
+            error('This obstacle method is only implemented for static obstacles')
+        end
+        obstacle_mask_i = (obstacle_i > 0);
+        schemeData.obstacle_mask_i = obstacle_mask_i;
+    else
+        % We always take the max between the data and the obstacles
+        % note that obstacles are negated.  That's because if you define the
+        % obstacles using something like ShapeSphere, it sets it up as a
+        % target. To make it an obstacle we just negate that.
+        data0 = max(data0, -obstacle_i);
+    end
 end
 
 %---Extract the information about targets----------------------------------
@@ -878,6 +901,7 @@ if isfield(schemeData, 'dynSys')
     schemeData.partialFunc = @genericPartial;
 end
 
+%% continue
 stopConverge = false;
 if isfield(extraArgs, 'stopConverge')
     stopConverge = extraArgs.stopConverge;
@@ -1166,17 +1190,13 @@ for i = istart:length(tau)
             error('check your discountFactor and discountMode')
         end
         
-        
-        
-        
-        % "Mask" using obstacles
-        if isfield(extraArgs, 'obstacleFunction')
+        % "Mask" using obstacles (Reach-Avoid Formulation)
+        if isfield(extraArgs, 'obstacleFunction') && ~isfield(extraArgs, 'obstacle_mask')
             if strcmp(obsMode, 'time-varying')
                 obstacle_i = obstacles(clns{:}, i);
             end
             y = max(y, -obstacle_i(:));
         end
-        
         
         % Update target function
         if isfield(extraArgs, 'targetFunction')
@@ -1184,7 +1204,6 @@ for i = istart:length(tau)
                 target_i = targets(clns{:}, i);
             end
         end
-        
         
     end
     

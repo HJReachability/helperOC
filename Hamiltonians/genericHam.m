@@ -74,6 +74,11 @@ if isprop(dynSys, 'TIdim') && ~isempty(dynSys.TIdim)
   hamValue = hamValue + TIderiv*TIdx{1};
 end
 
+%% Optional: add the running cost term if present
+if schemeData.dynSys.runningCost
+    hamValue = hamValue + dynSys.runningCostfunc(t, schemeData.grid.xs, u, d);
+end
+
 %% Negate hamValue if backward reachable set
 if strcmp(schemeData.tMode, 'backward')
   hamValue = -hamValue;
@@ -84,4 +89,10 @@ if isfield(schemeData, 'side')
     hamValue = -hamValue;
   end
 end
+
+%% If Obstacle mask is provided zero out certain elements
+if isfield(schemeData, 'obstacle_mask_i')
+    hamValue = hamValue .* schemeData.obstacle_mask_i;
+end
+
 end

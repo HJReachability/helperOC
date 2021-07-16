@@ -29,6 +29,9 @@ classdef DynSys < handle
     
     % Data (any data that one may want to store for convenience)
     data
+    
+    % Add a bool if a running cost is used. False per default.
+    runningCost = 0;
   end % end properties
 
   % No constructor in DynSys class. Use constructors in the subclasses
