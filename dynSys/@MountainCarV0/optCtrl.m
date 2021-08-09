@@ -36,7 +36,7 @@ ub = -0.07 * (position + 0.38)^2 + 0.07;
 % TODO: handle uMode (always min for Backwards Reachability with goal)  
 
 %% Optimal control
-actions = zeros(141);
+actions = zeros(size(xs{1}));
 actions((lb < velocity) & (velocity < ub)) = 2;
 uOpt = actions;
 
