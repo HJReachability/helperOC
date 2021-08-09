@@ -47,17 +47,14 @@ max_velocity = 0.07;
 min_position = -1.2;
 max_position = 0.6;
 
-goal_position = 0.5;
-goal_velocity = 0.0;
-
 %% Should we compute the trajectory?
-% compTraj = true;
-compTraj = false;
+compTraj = true;
+% compTraj = false;
 
 %% Grid
 grid_min = [min_position; min_velocity]; % Lower corner of computation domain
 grid_max = [max_position; max_velocity];    % Upper corner of computation domain
-N = [141; 141];         % Number of grid points per dimension
+N = [181; 181];         % Number of grid points per dimension
 grid = createGrid(grid_min, grid_max, N);
 
 % state space dimensions
@@ -69,19 +66,18 @@ grid = createGrid(grid_min, grid_max, N);
 % data0 = shapeCylinder(grid, 3, [0; 0; 0], R);
 % also try shapeRectangleByCorners, shapeSphere, etc.
 
-center = [0.55; 0];
-widths = [0.05; 0.01];
+% center = [0.55; 0];
+% widths = [0.05; 0.01];
 
-
-center = [0.55; 0];
-widths = [0.15; 0.03];
+center = [0.5; 0];
+widths = [0.1; 0.02];
 
 data0 = shapeRectangleByCenter(grid, center, widths);
 
 %% time vector
 t0 = 0;
 % changed the time from 2 seconds to 15
-tMax = 20;
+tMax = 80;
 dt = 0.1;
 tau = t0:dt:tMax;
 
@@ -102,7 +98,7 @@ mCar = MountainCarV0([0, 0], gravity, force);
 schemeData.grid = grid;
 schemeData.dynSys = mCar;
 % schemeData.accuracy = 'high'; 
-schemeData.accuracy = 'low'; 
+schemeData.accuracy = 'veryHigh'; 
 schemeData.uMode = uMode;
 
 %% Compute value function
@@ -139,19 +135,19 @@ if compTraj
   pause
   
   %set the initial state
-  xinit = [2, 2];
+  xinit = [-0.5, 0];
   
   figure(6)
   clf
-  h = visSetIm(g, data(:,:,:,end));
-  h.FaceAlpha = .3;
+  h = visSetIm(grid, data(:,:,:,end));
+%   h.FaceAlpha = .3;
   hold on
   s = scatter3(xinit(1), xinit(2), xinit(3));
   s.SizeData = 70;
   
   %check if this initial state is in the BRS/BRT
   %value = eval_u(g, data, x)
-  value = eval_u(g,data(:,:,:,end),xinit);
+  value = eval_u(grid,data(:,:,:,end),xinit);
   
   if value <= 0 %if initial state is in BRS/BRT
     % find optimal trajectory
@@ -171,7 +167,7 @@ if compTraj
     % [traj, traj_tau] = ...
     % computeOptTraj(g, data, tau, dynSys, extraArgs)
     [traj, traj_tau] = ...
-      computeOptTraj(g, dataTraj, tau2, mCar, TrajextraArgs);
+      computeOptTraj(grid, dataTraj, tau2, mCar, TrajextraArgs);
   else
     error(['Initial state is not in the BRS/BRT! It have a value of ' num2str(value,2)])
   end
