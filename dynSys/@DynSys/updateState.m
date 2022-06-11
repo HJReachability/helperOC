@@ -73,6 +73,16 @@ x1 = x(end, :)';
 obj.x = x1;
 obj.u = u;
 
-obj.xhist = cat(2, obj.xhist, x1);
-obj.uhist = cat(2, obj.uhist, u);
+try
+    obj.xhist = cat(2, obj.xhist, x1);
+catch
+    x1 = transpose(x1);
+    obj.xhist = cat(2, obj.xhist, x1);
+end
+try
+    obj.uhist = cat(2, obj.uhist, u);
+catch
+    u = transpose(u);
+    obj.uhist = cat(2, obj.uhist, u);
+end
 end

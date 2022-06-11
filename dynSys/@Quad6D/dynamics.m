@@ -57,9 +57,26 @@ switch dim
   case 1
     dx = x{dims==2};
   case 2
-    dx = (-(1/obj.m)*obj.transDrag*x{dims==2})+...
-          ((-1/obj.m)*sin(x{dims==5})*u{1})+...
-          ((-1/obj.m)*sin(x{dims==5})*u{2});
+%     try
+%         dx = (-(1/obj.m)*obj.transDrag*x{dims==2})+...
+%               ((-1/obj.m)*sin(x{dims==5})*u{1})+...
+%               ((-1/obj.m)*sin(x{dims==5})*u{2});
+%     catch
+% %     if iscell(x)
+% %         disp('x is cell')
+% %     end
+    if iscell(u)
+        disp('u is cell')
+%         u = cell2mat(u);
+        dx = (-(1/obj.m)*obj.transDrag*x{dims==2})+...
+             ((-1/obj.m)*sin(x{dims==5})*u{1})+...
+             ((-1/obj.m)*sin(x{dims==5})*u{2});
+    else 
+        dx = (-(1/obj.m)*obj.transDrag*x{dims==2})+...
+          ((-1/obj.m)*sin(x{dims==5})*u(1))+...
+          ((-1/obj.m)*sin(x{dims==5})*u(2));
+    end
+%     end
   case 3
     dx = x{dims==4};
   case 4
@@ -69,9 +86,23 @@ switch dim
   case 5
     dx = x{dims==6};
   case 6
-    dx = ((-1/obj.Iyy)*obj.rotDrag*x{dims==6})+...
-      ((-obj.l/obj.Iyy)*u{1})+...
-      ((obj.l/obj.Iyy)*u{2});
+%     try
+%         dx = ((-1/obj.Iyy)*obj.rotDrag*x{dims==6})+...
+%           ((-obj.l/obj.Iyy)*u{1})+...
+%           ((obj.l/obj.Iyy)*u{2});
+%     catch
+    if iscell(u)
+        disp('u is cell')
+%         u = cell2mat(u);
+        dx = ((-1/obj.Iyy)*obj.rotDrag*x{dims==6})+...
+          ((-obj.l/obj.Iyy)*u{1})+...
+          ((obj.l/obj.Iyy)*u{2});
+    else 
+        dx = ((-1/obj.Iyy)*obj.rotDrag*x{dims==6})+...
+          ((-obj.l/obj.Iyy)*u(1))+...
+          ((obj.l/obj.Iyy)*u(2));
+    end
+%     end
   otherwise
     error('Only dimension 1-6 are defined for dynamics of Quad6D!')
 end
